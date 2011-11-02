@@ -1,6 +1,8 @@
 import random
 import pygame
 
+from player import Player
+
 class BaseGame(object):
 
     def __init__(self):
@@ -29,7 +31,7 @@ class BaseGame(object):
     def run(self):
         self.is_running = True
         while True:
-            self.clock.tick(self.fps)
+            milliseconds = self.clock.tick(self.fps)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.stop()
@@ -40,7 +42,8 @@ class BaseGame(object):
                 elif event.type == pygame.MOUSEMOTION:
                     self.on_mouse_motion(event.pos, event.rel)
             if self.is_running:
-                self.on_update()
+                self.on_update(milliseconds)
+                self.on_draw(milliseconds)
                 pygame.display.update()
             else:
                 break
@@ -66,7 +69,9 @@ class BaseGame(object):
 
     def on_mouse_motion(self, pos, rel): pass
 
-    def on_update(self): pass
+    def on_update(self, milliseconds): pass
+
+    def on_draw(self, milliseconds): pass
 
 class Game(BaseGame):
 
@@ -90,22 +95,39 @@ class Game(BaseGame):
             for y in xrange(self.map_size[1]):
                 self.map[x][y] = random.choice((0, 0, 0, 1))
 
-    def on_update(self):
+        # Init player
+        self.player = Player()
+        self.player.location = [int(self.map_size[0] / 2), int(self.map_size[1] / 2)]
+        self.map[self.player.location[0]][self.player.location[1]] = 0
 
-        cell_width, cell_height = self.cell_size
+    def on_update(self, milliseconds):
+        self.player.update(milliseconds)
 
-        # Clear screen
+    def on_draw(self, milliseconds):
+        self._clear_screen()
+        self._draw_map()
+        self._draw_player()
+
+    def _clear_screen(self):
         self.screen.fill((0, 0, 0))
 
-        # Draw map
+    def _draw_map(self):
         for x in xrange(self.map_size[0]):
             for y in xrange(self.map_size[1]):
-
-                # Draw cell
                 cell_type = self.map[x][y]
-                rect = pygame.rect.Rect(x * cell_width, y * cell_height,
-                                        cell_width, cell_height)
-                pygame.draw.rect(self.screen, self.cell_colors[cell_type], rect)
+                color = self.cell_colors[cell_type]
+                self._paint_cell(color, (x, y))
+
+    def _draw_player(self):
+        color = (0, 192, 0)
+        self._paint_cell(color, self.player.location, self.player.offset)
+
+    def _paint_cell(self, color, coord, offset=(0.0, 0.0)):
+        rect = pygame.rect.Rect((coord[0] + offset[0]) * self.cell_size[0],
+                                (coord[1] + offset[1]) * self.cell_size[1],
+                                self.cell_size[0],
+                                self.cell_size[1])
+        pygame.draw.rect(self.screen, color, rect)
 
     def on_keydown(self, key):
         if key == pygame.K_ESCAPE:
