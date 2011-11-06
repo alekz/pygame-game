@@ -1,7 +1,9 @@
+import random
+
 import pygame
 
-from player import Player
-from map import Map
+import player
+from map import Map, RandomMapGenerator
 
 class BaseGame(object):
 
@@ -81,23 +83,34 @@ class Game(BaseGame):
 
         # Init map
         map_size = tuple(int(self.screen_size[i] / self.cell_size[i]) for i in (0, 1))
-        self.map = Map(self, map_size)
+        map_generator = RandomMapGenerator()
+        self.map = Map(self, map_size, map_generator)
 
         # Init player
-        self.player = Player(self)
+        self.player = player.Player(self, player.HumanPlayerControls(self))
         self.player.location = [int(self.map.size[0] / 2), int(self.map.size[1] / 2)]
+        self.map.set_cell(self.player.location, Map.CELL_TYPE_FLOOR) # Initial player's position should be empty
 
-        # Initial player's position should be empty
-        self.map.cells[self.player.location[0]][self.player.location[1]] = 0
+        # Init monsters
+        self.monsters = []
+        for _ in xrange(4):
+            monster = player.Player(self, player.RandomMovementControls(self))
+            monster.location = (random.randint(0, self.map.size[0] - 1), random.randint(0, self.map.size[1] - 1))
+            self.map.set_cell(monster.location, Map.CELL_TYPE_FLOOR) # Initial monster's position should be empty
+            self.monsters.append(monster)
+
 
     def on_update(self, milliseconds):
         self.player.update(milliseconds)
-        print self.clock.get_fps()
+        for monster in self.monsters:
+            monster.update(milliseconds)
 
     def on_draw(self, milliseconds):
         self._clear_screen()
         self._draw_map()
+        self._draw_monsters()
         self._draw_player()
+        self._draw_fps()
 
     def _clear_screen(self):
         self.screen.fill((0, 0, 0))
@@ -112,6 +125,15 @@ class Game(BaseGame):
     def _draw_player(self):
         color = (0, 192, 0)
         self._paint_cell(color, self.player.location, self.player.offset)
+
+    def _draw_monsters(self):
+        color = (192, 0, 0)
+        for monster in self.monsters:
+            self._paint_cell(color, monster.location, monster.offset)
+
+    def _draw_fps(self):
+        fps = self.clock.get_fps()
+        #print fps
 
     def _paint_cell(self, color, coord, offset=(0.0, 0.0)):
         rect = pygame.rect.Rect((coord[0] + offset[0]) * self.cell_size[0],
