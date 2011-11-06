@@ -8,13 +8,47 @@ class Player(object):
     UP = 4
     DOWN = 8
 
-    def __init__(self):
+    def __init__(self, game):
+        self.game = game
         self.state = Player.STANDING
         self.location = [0, 0] # Cell coordinates within a map
         self.offset = [0.0, 0.0] # Offset within a cell, -1.0..1.0
         self.speed = 5.0 # Cells per second
 
-    def update(self, milliseconds):
+    def _get_opposite_direction(self, direction=None):
+        direction = direction or self.state
+        return {
+                Player.LEFT:  Player.RIGHT,
+                Player.RIGHT: Player.LEFT,
+                Player.UP:    Player.DOWN,
+                Player.DOWN:  Player.UP,
+                }.get(direction, direction)
+
+    def _is_opposite_direction(self, direction1, direction2):
+        return self._get_opposite_direction(direction1) == direction2
+
+    def _get_direction_sign(self, direction=None):
+        direction = direction or self.state
+        return {
+                Player.LEFT:  -1,
+                Player.RIGHT: +1,
+                Player.UP:    -1,
+                Player.DOWN:  +1,
+                }.get(direction, 0)
+
+    def _get_direction_index(self, direction=None):
+        direction = direction or self.state
+        return {
+                Player.LEFT:  0,
+                Player.RIGHT: 0,
+                Player.UP:    1,
+                Player.DOWN:  1,
+                }.get(direction)
+
+    def _get_direction_info(self, direction=None):
+        return (self._get_direction_index(direction), self._get_direction_sign(direction))
+
+    def _get_new_movement_state(self):
 
         # Check, which player control keys are pressed
         keys = pygame.key.get_pressed()
@@ -25,36 +59,49 @@ class Player(object):
 
         # Calculate the next movement state
         states = [
-                  (0, -1, key_left,  key_right, Player.LEFT,  Player.RIGHT),
-                  (0, +1, key_right, key_left,  Player.RIGHT, Player.LEFT ),
-                  (1, -1, key_up,    key_down,  Player.UP,    Player.DOWN ),
-                  (1, +1, key_down,  key_up,    Player.DOWN,  Player.UP   ),
+                  (key_left,  key_right, Player.LEFT  ),
+                  (key_right, key_left,  Player.RIGHT ),
+                  (key_up,    key_down,  Player.UP    ),
+                  (key_down,  key_up,    Player.DOWN  ),
                   ]
 
-        for (i, k, key, opposite_key, state, opposite_state) in states:
+        for (key, opposite_key, state) in states:
             if key and not opposite_key:
-                if self.state == Player.STANDING:
-                    self.state = state
-                elif self.state == opposite_state:
-                    self.location[i] -= k
-                    self.offset[i] = k + self.offset[i]
-                    self.state = state
+                if self.state in (Player.STANDING, self._get_opposite_direction()):
+                    return state
 
-        # Tuple associated with each direction: (i, k, key)
-        # i = 0 (horizontal movement) or 1 (vertical)
-        # k = -1 (left/up) or 1 (right/down)
-        # key - if that direction's key is still pressed
-        states = {
-                  Player.LEFT:  (0, -1, key_left),
-                  Player.RIGHT: (0, +1, key_right),
-                  Player.UP:    (1, -1, key_up),
-                  Player.DOWN:  (1, +1, key_down),
-                  }
+        return Player.STANDING
+
+
+    def update(self, milliseconds):
+
+        new_state = self._get_new_movement_state()
+
+        if new_state != Player.STANDING:
+
+            if self.state == Player.STANDING:
+                # Start moving, but first check if it is allowed
+                new_location = self.location[:]
+                i, k = self._get_direction_info(new_state)
+                new_location[i] += k
+                if not self.game.map.can_move_to(new_location):
+                    new_state = Player.STANDING
+
+            elif self._is_opposite_direction(new_state, self.state):
+                # Move to the opposite direction (should always be allowed)
+                # Direction   K  Before    After
+                # L -> R     -1  10; -0.2   9; +0.8
+                # R -> L     +1  10; +0.2  11; -0.8
+                i, k = self._get_direction_info()
+                self.location[i] += k
+                self.offset[i] -= k
 
         # Move to one of directions
-        if states.has_key(self.state):
+        if self.state == Player.STANDING:
+            self.state = new_state
+        if self.state != Player.STANDING:
 
-            i, k, key = states[self.state]
+            i, k = self._get_direction_info()
 
             # Move a bit
             self.offset[i] += k * self.speed * milliseconds / 1000.0
@@ -64,9 +111,18 @@ class Player(object):
 
                 # Moved to a neighbouring cell
                 self.location[i] += k
-                self.offset[i] -= k * 1.0
+                self.offset[i] -= k
 
-                # Stop movement if key is not pressed anymore
-                if not key:
+                # Check if further movement is possible: stop if key is not
+                # pressed anymore or if there is an obstacle
+                stop = False
+                if new_state == Player.STANDING:
+                    stop = True
+                else:
+                    new_location = self.location[:]
+                    new_location[i] += k
+                    if not self.game.map.can_move_to(new_location):
+                        stop = True
+                if stop:
                     self.offset[i] = 0.0
                     self.state = Player.STANDING

@@ -1,7 +1,7 @@
-import random
 import pygame
 
 from player import Player
+from map import Map
 
 class BaseGame(object):
 
@@ -77,31 +77,22 @@ class Game(BaseGame):
 
     def on_init(self):
 
-        self.cell_size = (10, 10)
-        self.map_size = tuple(int(self.screen_size[i] / self.cell_size[i]) for i in (0, 1))
+        self.cell_size = (20, 20)
 
-        # List of colors for each cell type
-        self.cell_colors = {
-                            0: (  0,   0,   0),
-                            1: (128, 128, 128),
-                            }
-
-        # Generate empty map
-        empty_col = [0] * self.map_size[1]
-        self.map = [empty_col[:] for _ in xrange(self.map_size[0])]
-
-        # Generate random map
-        for x in xrange(self.map_size[0]):
-            for y in xrange(self.map_size[1]):
-                self.map[x][y] = random.choice((0, 0, 0, 1))
+        # Init map
+        map_size = tuple(int(self.screen_size[i] / self.cell_size[i]) for i in (0, 1))
+        self.map = Map(self, map_size)
 
         # Init player
-        self.player = Player()
-        self.player.location = [int(self.map_size[0] / 2), int(self.map_size[1] / 2)]
-        self.map[self.player.location[0]][self.player.location[1]] = 0
+        self.player = Player(self)
+        self.player.location = [int(self.map.size[0] / 2), int(self.map.size[1] / 2)]
+
+        # Initial player's position should be empty
+        self.map.cells[self.player.location[0]][self.player.location[1]] = 0
 
     def on_update(self, milliseconds):
         self.player.update(milliseconds)
+        print self.clock.get_fps()
 
     def on_draw(self, milliseconds):
         self._clear_screen()
@@ -112,10 +103,10 @@ class Game(BaseGame):
         self.screen.fill((0, 0, 0))
 
     def _draw_map(self):
-        for x in xrange(self.map_size[0]):
-            for y in xrange(self.map_size[1]):
-                cell_type = self.map[x][y]
-                color = self.cell_colors[cell_type]
+        for x in xrange(self.map.size[0]):
+            for y in xrange(self.map.size[1]):
+                cell_type = self.map.cells[x][y]
+                color = self.map.colors[cell_type]
                 self._paint_cell(color, (x, y))
 
     def _draw_player(self):
