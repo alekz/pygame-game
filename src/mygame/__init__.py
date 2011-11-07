@@ -88,21 +88,36 @@ class Game(BaseGame):
 
         # Init player
         self.player = player.Player(self, player.controls.HumanPlayerControls(self))
-        self.player.location = [int(self.map.size[0] / 2), int(self.map.size[1] / 2)]
+        self.player.location = [int(self.map.width / 2), int(self.map.height / 2)]
+        self.player.speed = 10.0
         self.map.set_cell(self.player.location, Map.CELL_TYPE_FLOOR) # Initial player's position should be empty
 
         # Init monsters
         self.monsters = []
-        for _ in xrange(4):
-            monster = player.Player(self, player.controls.RandomMovementControls(self))
-            monster.location = (random.randint(0, self.map.size[0] - 1), random.randint(0, self.map.size[1] - 1))
-            self.map.set_cell(monster.location, Map.CELL_TYPE_FLOOR) # Initial monster's position should be empty
-            self.monsters.append(monster)
 
+        # Stupid
+        monster = player.Player(self, player.controls.RandomMovementControls(self))
+        monster.location = self.map.get_random_cell(Map.CELL_TYPE_FLOOR)
+        self.monsters.append((monster, (255, 0, 255)))
+
+        # Follower
+        monster_controls = player.controls.FollowPlayerControls(self)
+        monster_controls.set_target(self.player)
+        monster = player.Player(self, monster_controls)
+        monster.location = self.map.get_random_cell(Map.CELL_TYPE_FLOOR)
+        self.monsters.append((monster, (255, 0, 0)))
+
+        # Follower's follower
+        monster_controls = player.controls.FollowPlayerControls(self)
+        monster_controls.set_target(monster)
+        monster = player.Player(self, monster_controls)
+        monster.location = self.map.get_random_cell(Map.CELL_TYPE_FLOOR)
+        monster.speed = 3.0
+        self.monsters.append((monster, (255, 128, 0)))
 
     def on_update(self, milliseconds):
         self.player.update(milliseconds)
-        for monster in self.monsters:
+        for monster, _ in self.monsters:
             monster.update(milliseconds)
 
     def on_draw(self, milliseconds):
@@ -116,8 +131,8 @@ class Game(BaseGame):
         self.screen.fill((0, 0, 0))
 
     def _draw_map(self):
-        for x in xrange(self.map.size[0]):
-            for y in xrange(self.map.size[1]):
+        for x in xrange(self.map.width):
+            for y in xrange(self.map.height):
                 cell_type = self.map.cells[x][y]
                 color = self.map.colors[cell_type]
                 self._paint_cell(color, (x, y))
@@ -127,8 +142,7 @@ class Game(BaseGame):
         self._paint_cell(color, self.player.location, self.player.offset)
 
     def _draw_monsters(self):
-        color = (192, 0, 0)
-        for monster in self.monsters:
+        for monster, color in self.monsters:
             self._paint_cell(color, monster.location, monster.offset)
 
     def _draw_fps(self):
