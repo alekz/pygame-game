@@ -1,11 +1,15 @@
 import random
 import pygame
+from game.types import direction
 
 class PlayerControls(object):
 
     def __init__(self, game):
         self.game = game
         self.player = None
+        self.init()
+
+    def init(self): pass
 
     def set_player(self, player):
         self.player = player
@@ -20,7 +24,7 @@ class PlayerControls(object):
 class NoMovementControls(PlayerControls):
 
     def get_movement_direction(self):
-        return Player.STANDING
+        return direction.NONE
 
 
 class HumanPlayerControls(PlayerControls):
@@ -34,58 +38,70 @@ class HumanPlayerControls(PlayerControls):
         key_up    = keys[pygame.K_UP]
         key_down  = keys[pygame.K_DOWN]
 
-        # Calculate the next movement state
-        states = [
-                  (key_left,  key_right, Player.LEFT,  Player.RIGHT ),
-                  (key_right, key_left,  Player.RIGHT, Player.LEFT  ),
-                  (key_up,    key_down,  Player.UP,    Player.DOWN  ),
-                  (key_down,  key_up,    Player.DOWN,  Player.UP    ),
+        # Calculate the next movement direction
+        directions = [
+                  (key_left,  key_right, direction.LEFT,  direction.RIGHT ),
+                  (key_right, key_left,  direction.RIGHT, direction.LEFT  ),
+                  (key_up,    key_down,  direction.UP,    direction.DOWN  ),
+                  (key_down,  key_up,    direction.DOWN,  direction.UP    ),
                   ]
 
-        for (key, opposite_key, direction, opposite_direction) in states:
+        for (key, opposite_key, current_direction, opposite_direction) in directions:
             if key and not opposite_key:
-                if self.player.state in (Player.STANDING, opposite_direction):
-                    return direction
+                if self.player.direction in (direction.NONE, opposite_direction):
+                    return current_direction
 
-        return Player.STANDING
+        return direction.NONE
 
 
 class RandomMovementControls(PlayerControls):
 
+    def init(self):
+        self.last_direction = direction.NONE
+
     def get_movement_direction(self):
 
-        if self.player.state == Player.STANDING:
+        new_direction = direction.NONE
+
+        if self.player.direction == direction.NONE:
 
             possible_directions = [
-                                   (Player.LEFT,  -1,  0),
-                                   (Player.RIGHT, +1,  0),
-                                   (Player.UP,     0, -1),
-                                   (Player.DOWN,   0, +1),
+                                   (direction.LEFT,  -1,  0),
+                                   (direction.RIGHT, +1,  0),
+                                   (direction.UP,     0, -1),
+                                   (direction.DOWN,   0, +1),
                                    ]
 
-            allowed_states = []
+            allowed_directions = []
 
-            for state, dx, dy in possible_directions:
+            for possible_direction, dx, dy in possible_directions:
                 location = (self.player.location[0] + dx, self.player.location[1] + dy)
                 if self.game.map.can_move_to(location):
-                    allowed_states.append(state)
+                    if possible_direction == self.last_direction:
+                        weight = 10
+                    elif possible_direction == direction.get_opposite(self.last_direction):
+                        weight = 1
+                    else:
+                        weight = 3
+                    allowed_directions.append((weight, possible_direction))
 
-            if allowed_states:
-                return random.choice(allowed_states)
+            if allowed_directions:
+                total_weight = sum(weight for weight, _ in allowed_directions)
+                r = random.randint(0, total_weight - 1)
+                for weight, new_direction in allowed_directions:
+                    if r < weight:
+                        break
+                    r -= weight
 
-        return Player.STANDING
+            self.last_direction = new_direction
+
+        return new_direction
 
 class Player(object):
 
-    STANDING = 0
-    LEFT = 1
-    RIGHT = 2
-    UP = 4
-    DOWN = 8
-
     def __init__(self, game, controls):
         self.game = game
-        self.state = Player.STANDING
+        self.direction = direction.NONE
         self.location = (0, 0) # Cell coordinates within a map
         self.offset = (0, 0) # Offset within a cell, -1.0..1.0
         self.speed = 5.0 # Cells per second
@@ -110,71 +126,35 @@ class Player(object):
         return tuple(self._offset)
     offset = property(get_offset, set_offset)
 
-    def _get_opposite_direction(self, direction=None):
-        direction = direction or self.state
-        return {
-                Player.LEFT:  Player.RIGHT,
-                Player.RIGHT: Player.LEFT,
-                Player.UP:    Player.DOWN,
-                Player.DOWN:  Player.UP,
-                }.get(direction, direction)
-
-    def _is_opposite_direction(self, direction1, direction2):
-        return self._get_opposite_direction(direction1) == direction2
-
-    def _get_direction_sign(self, direction=None):
-        direction = direction or self.state
-        return {
-                Player.LEFT:  -1,
-                Player.RIGHT: +1,
-                Player.UP:    -1,
-                Player.DOWN:  +1,
-                }.get(direction, 0)
-
-    def _get_direction_index(self, direction=None):
-        direction = direction or self.state
-        return {
-                Player.LEFT:  0,
-                Player.RIGHT: 0,
-                Player.UP:    1,
-                Player.DOWN:  1,
-                }.get(direction)
-
-    def _get_direction_info(self, direction=None):
-        return (self._get_direction_index(direction), self._get_direction_sign(direction))
-
     def update(self, milliseconds):
 
         self.controls.update(milliseconds)
 
-        new_state = self.controls.get_movement_direction()
+        new_direction = self.controls.get_movement_direction()
 
-        if new_state != Player.STANDING:
+        if new_direction != direction.NONE:
 
-            if self.state == Player.STANDING:
+            if self.direction == direction.NONE:
                 # Start moving, but first check if it is allowed
                 new_location = self._location[:]
-                i, k = self._get_direction_info(new_state)
+                i, k = direction.get_info(new_direction)
                 new_location[i] += k
                 if not self.game.map.can_move_to(new_location):
-                    new_state = Player.STANDING
+                    new_direction = direction.NONE
                 else:
-                    self.state = new_state
+                    self.direction = new_direction
 
-            elif self._is_opposite_direction(new_state, self.state):
+            elif direction.is_opposite(new_direction, self.direction):
                 # Move to the opposite direction (should always be allowed)
-                # Direction   K  Before    After
-                # L -> R     -1  10; -0.2   9; +0.8
-                # R -> L     +1  10; +0.2  11; -0.8
-                i, k = self._get_direction_info()
+                i, k = direction.get_info(self.direction)
                 self._location[i] += k
                 self._offset[i] -= k
-                self.state = new_state
+                self.direction = new_direction
 
         # Move to one of directions
-        if self.state != Player.STANDING:
+        if self.direction != direction.NONE:
 
-            i, k = self._get_direction_info()
+            i, k = direction.get_info(self.direction)
 
             # Move a bit
             self._offset[i] += k * self.speed * milliseconds / 1000.0
@@ -189,7 +169,7 @@ class Player(object):
                 # Check if further movement is possible: stop if key is not
                 # pressed anymore or if there is an obstacle
                 stop = False
-                if new_state == Player.STANDING:
+                if new_direction == direction.NONE:
                     stop = True
                 else:
                     new_location = self._location[:]
@@ -198,4 +178,4 @@ class Player(object):
                         stop = True
                 if stop:
                     self._offset[i] = 0.0
-                    self.state = Player.STANDING
+                    self.direction = direction.NONE
