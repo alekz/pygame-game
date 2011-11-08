@@ -3,7 +3,7 @@ import random
 import pygame
 
 from mygame import player
-from mygame.map import Map, RandomMapGenerator
+from mygame.map import generator, Map
 
 class BaseGame(object):
 
@@ -83,7 +83,7 @@ class Game(BaseGame):
 
         # Init map
         map_size = tuple(int(self.screen_size[i] / self.cell_size[i]) for i in (0, 1))
-        map_generator = RandomMapGenerator()
+        map_generator = generator.RandomMapGenerator()
         self.map = Map(self, map_size, map_generator)
 
         # Init player
