@@ -83,20 +83,20 @@ class Game(BaseGame):
 
         # Init map
         map_size = tuple(int(self.screen_size[i] / self.cell_size[i]) for i in (0, 1))
-        map_generator = generator.RandomMapGenerator()
+        map_generator = generator.MazeGenerator()
         self.map = Map(self, map_size, map_generator)
 
         # Init player
         self.player = player.Player(self, player.controls.HumanPlayerControls(self))
-        self.player.location = [int(self.map.width / 2), int(self.map.height / 2)]
         self.player.speed = 10.0
-        self.map.set_cell(self.player.location, Map.CELL_TYPE_FLOOR) # Initial player's position should be empty
+        self.player.location = self.map.get_random_cell(Map.CELL_TYPE_FLOOR)
 
         # Init monsters
         self.monsters = []
 
         # Stupid
         monster = player.Player(self, player.controls.RandomMovementControls(self))
+        monster.speed = 5.0
         monster.location = self.map.get_random_cell(Map.CELL_TYPE_FLOOR)
         self.monsters.append((monster, (255, 0, 255)))
 
