@@ -115,6 +115,10 @@ class Game(BaseGame):
         monster.speed = 3.0
         self.monsters.append((monster, (255, 128, 0)))
 
+        # Init drawing surfaces
+        self.update_map = True
+        self.map_surface = pygame.Surface(self.screen_size)
+
     def on_update(self, milliseconds):
         self.player.update(milliseconds)
         for monster, _ in self.monsters:
@@ -131,11 +135,14 @@ class Game(BaseGame):
         self.screen.fill((0, 0, 0))
 
     def _draw_map(self):
-        for x in xrange(self.map.width):
-            for y in xrange(self.map.height):
-                cell_type = self.map.cells[x][y]
-                color = self.map.colors[cell_type]
-                self._paint_cell(color, (x, y))
+        if self.update_map:
+            for x in xrange(self.map.width):
+                for y in xrange(self.map.height):
+                    cell_type = self.map.cells[x][y]
+                    color = self.map.colors[cell_type]
+                    self._paint_cell(color, (x, y), surface=self.map_surface)
+            self.update_map = False
+        self.screen.blit(self.map_surface, (0, 0))
 
     def _draw_player(self):
         color = (0, 192, 0)
@@ -150,12 +157,13 @@ class Game(BaseGame):
         #print fps
         pass
 
-    def _paint_cell(self, color, coord, offset=(0.0, 0.0)):
+    def _paint_cell(self, color, coord, offset=(0.0, 0.0), surface=None):
+        surface = surface or self.screen
         rect = pygame.rect.Rect((coord[0] + offset[0]) * self.cell_size[0],
                                 (coord[1] + offset[1]) * self.cell_size[1],
                                 self.cell_size[0],
                                 self.cell_size[1])
-        pygame.draw.rect(self.screen, color, rect)
+        pygame.draw.rect(surface, color, rect)
 
     def on_keydown(self, key):
         if key == pygame.K_ESCAPE:
