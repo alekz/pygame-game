@@ -40,13 +40,29 @@ class MazeGenerator(MapGenerator):
             for y in xrange(h):
                 cells[(x, y)] = True
 
+        # Generate random rooms
+        rooms = []
+        for _ in xrange(1):
+            d = 1  # Minimum distance from map borders
+            rw = int(w / 3)
+            rh = int(h / 3)
+            rx = random.randint(d, w - rw - d)
+            ry = random.randint(d, h - rh - d)
+            for x in xrange(rx, rx + rw):
+                for y in xrange(ry, ry + rh):
+                    cells[(x, y)] = False
+            rooms.append((rw, rh, rx, ry))
+
         # Choose start cell
-        x = random.randint(0, w - 1)
-        y = random.randint(0, h - 1)
-        c = (x, y)
+        while True:
+            x = random.randint(0, w - 1)
+            y = random.randint(0, h - 1)
+            c = (x, y)
+            if cells[c]:
+                break
 
         visited_cells = [c]
-        cells[c] = True
+        cells[c] = False
 
         while visited_cells:
 
@@ -88,3 +104,27 @@ class MazeGenerator(MapGenerator):
                 x = 2 * random.randint(1, w) - 1
                 y = 2 * random.randint(1, h - 1)
             map_.set_cell((x, y), Map.CELL_TYPE_FLOOR)
+
+        # Draw rooms
+
+        # Walls
+        for rw, rh, rx, ry in rooms:
+            for x in xrange(2 * rx, 2 * (rx + rw) + 1):
+                for y in xrange(2 * ry, 2 * (ry + rh) + 1):
+                    map_.set_cell((x, y), Map.CELL_TYPE_WALL)
+        # Floor
+        for rw, rh, rx, ry in rooms:
+            for x in xrange(2 * rx + 1, 2 * (rx + rw)):
+                for y in xrange(2 * ry + 1, 2 * (ry + rh)):
+                    map_.set_cell((x, y), Map.CELL_TYPE_FLOOR)
+        # Doors
+        for rw, rh, rx, ry in rooms:
+            d = 1
+            doors = [
+                     (2 * random.randint(rx + d, rx + rw - 1 - d) + 1, 2 * ry),
+                     (2 * random.randint(rx + d, rx + rw - 1 - d) + 1, 2 * (ry + rh)),
+                     (2 * rx, 2 * random.randint(ry + d, ry + rh - 1 - d) + 1),
+                     (2 * (rx + rw), 2 * random.randint(ry + d, ry + rh - 1 - d) + 1),
+                     ]
+            for door_coord in doors:
+                map_.set_cell(door_coord, Map.CELL_TYPE_FLOOR)
