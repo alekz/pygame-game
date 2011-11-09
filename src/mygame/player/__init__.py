@@ -35,8 +35,6 @@ class Player(object):
 
     def update(self, milliseconds):
 
-        self.controls.update(milliseconds)
-
         new_direction = self.controls.get_movement_direction()
 
         if new_direction != direction.NONE:

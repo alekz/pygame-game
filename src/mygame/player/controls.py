@@ -1,4 +1,5 @@
 import random
+import math
 
 import pygame
 
@@ -17,11 +18,27 @@ class PlayerControls(object):
     def set_player(self, player):
         self.player = player
 
-    def update(self, milliseconds):
-        pass
-
     def get_movement_direction(self):
         raise NotImplementedError
+
+
+class CompositePlayerControls(PlayerControls):
+
+    def __init__(self, game):
+        self.controls = {}
+        super(CompositePlayerControls, self).__init__(game)
+
+    def set_player(self, player):
+        super(CompositePlayerControls, self).set_player(player)
+        for controls in self.controls.values():
+            controls.set_player(self.player)
+
+    def add_controls(self, name, controls):
+        self.controls[name] = controls
+        controls.set_player(self.player)
+
+    def get_movement_direction_from_controls(self, name):
+        return self.controls[name].get_movement_direction()
 
 
 class NoMovementControls(PlayerControls):
@@ -81,11 +98,11 @@ class RandomMovementControls(PlayerControls):
                 location = (self.player.location[0] + dx, self.player.location[1] + dy)
                 if self.game.map.can_move_to(location):
                     if possible_direction == self.last_direction:
-                        weight = 10
+                        weight = 100
                     elif possible_direction == direction.get_opposite(self.last_direction):
                         weight = 1
                     else:
-                        weight = 3
+                        weight = 30
                     allowed_directions.append((weight, possible_direction))
 
             if allowed_directions:
@@ -219,3 +236,33 @@ class FollowPlayerControls(PlayerControls):
             return direction.DOWN
         else:
             return direction.NONE
+
+
+class MonsterControls(CompositePlayerControls):
+
+    def init(self):
+        self.add_controls('random', RandomMovementControls(self.game))
+        self.add_controls('follow', FollowPlayerControls(self.game))
+        self.target = None
+        self.target_distance = None
+        self.is_following = False
+
+    def set_target(self, target):
+        self.target = target
+        self.controls['follow'].set_target(target)
+
+    def get_movement_direction(self):
+        distance = math.sqrt(
+                             (self.player.location[0] - self.target.location[0]) ** 2 +
+                             (self.player.location[1] - self.target.location[1]) ** 2
+                            )
+
+        if not self.is_following and distance <= self.target_distance[0]:
+            self.is_following = True
+        elif self.is_following and self.target_distance[1] < distance:
+            self.is_following = False
+
+        if self.is_following:
+            return self.get_movement_direction_from_controls('follow')
+        else:
+            return self.get_movement_direction_from_controls('random')

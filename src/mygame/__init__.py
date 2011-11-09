@@ -79,7 +79,7 @@ class Game(BaseGame):
 
     def on_init(self):
 
-        self.cell_size = (20, 20)
+        self.cell_size = (10, 10)
 
         # Init map
         map_size = tuple(int(self.screen_size[i] / self.cell_size[i]) for i in (0, 1))
@@ -101,19 +101,22 @@ class Game(BaseGame):
         self.monsters.append((monster, (255, 0, 255)))
 
         # Follower
-        monster_controls = player.controls.FollowPlayerControls(self)
+        monster_controls = player.controls.MonsterControls(self)
         monster_controls.set_target(self.player)
+        monster_controls.target_distance = (10, 20)
         monster = player.Player(self, monster_controls)
         monster.location = self.map.get_random_cell(Map.CELL_TYPE_FLOOR)
-        self.monsters.append((monster, (255, 0, 0)))
+        monster.speed = 4.0
+        self.monsters.append((monster, (255, 128, 0)))
 
-        # Follower's follower
-        monster_controls = player.controls.FollowPlayerControls(self)
-        monster_controls.set_target(monster)
+        # Another follower
+        monster_controls = player.controls.MonsterControls(self)
+        monster_controls.set_target(self.player)
+        monster_controls.target_distance = (10, 15)
         monster = player.Player(self, monster_controls)
         monster.location = self.map.get_random_cell(Map.CELL_TYPE_FLOOR)
         monster.speed = 3.0
-        self.monsters.append((monster, (255, 128, 0)))
+        self.monsters.append((monster, (255, 255, 0)))
 
         # Init drawing surfaces
         self.update_map = True
@@ -150,6 +153,8 @@ class Game(BaseGame):
 
     def _draw_monsters(self):
         for monster, color in self.monsters:
+            if hasattr(monster.controls, 'is_following') and monster.controls.is_following:
+                color = (255, 0, 0)
             self._paint_cell(color, monster.location, monster.offset)
 
     def _draw_fps(self):
