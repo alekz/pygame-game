@@ -78,3 +78,13 @@ class MazeGenerator(MapGenerator):
             # Remove cell if it does't have unvisited neighbours anymore
             if len(neighbours) <= 1:
                 visited_cells.remove(c)
+
+        # Add random holes to the maze
+        for _ in xrange(w * h / 2):
+            if random.randint(0, 1) == 1:
+                x = 2 * random.randint(1, w - 1)
+                y = 2 * random.randint(1, h) - 1
+            else:
+                x = 2 * random.randint(1, w) - 1
+                y = 2 * random.randint(1, h - 1)
+            map_.set_cell((x, y), Map.CELL_TYPE_FLOOR)
