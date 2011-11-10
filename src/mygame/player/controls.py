@@ -241,11 +241,21 @@ class FollowPlayerControls(PlayerControls):
 class MonsterControls(CompositePlayerControls):
 
     def init(self):
+
         self.add_controls('random', RandomMovementControls(self.game))
         self.add_controls('follow', FollowPlayerControls(self.game))
+
         self.target = None
         self.target_distance = None
         self.is_following = False
+
+        self.default_speed = None
+        self.walk_speed = None
+        self.attack_speed = None
+
+    def set_player(self, player):
+        super(MonsterControls, self).set_player(player)
+        self.default_speed = player.speed
 
     def set_target(self, target):
         self.target = target
@@ -259,8 +269,10 @@ class MonsterControls(CompositePlayerControls):
 
         if not self.is_following and distance <= self.target_distance[0]:
             self.is_following = True
+            self.player.speed = self.attack_speed or self.default_speed
         elif self.is_following and self.target_distance[1] < distance:
             self.is_following = False
+            self.player.speed = self.walk_speed or self.default_speed
 
         if self.is_following:
             return self.get_movement_direction_from_controls('follow')

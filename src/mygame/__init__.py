@@ -1,4 +1,5 @@
 import random
+import math
 
 import pygame
 
@@ -85,38 +86,47 @@ class Game(BaseGame):
         map_size = tuple(int(self.screen_size[i] / self.cell_size[i]) for i in (0, 1))
         map_generator = generator.MazeGenerator()
         self.map = Map(self, map_size, map_generator)
+        empty_cells = list(self.map.get_cells(Map.CELL_TYPE_FLOOR))
 
         # Init player
         self.player = player.Player(self, player.controls.HumanPlayerControls(self))
         self.player.speed = 10.0
-        self.player.location = self.map.get_random_cell(Map.CELL_TYPE_FLOOR)
+        self.player.location = random.choice(empty_cells)
+
+        # Make sure monsters are generated at some distance from the player
+        empty_cells = list((x, y) for (x, y) in empty_cells
+                                  if 15 < math.sqrt((x - self.player.location[0]) ** 2 +
+                                                    (y - self.player.location[1]) ** 2))
 
         # Init monsters
         self.monsters = []
 
-        # Stupid
-        monster = player.Player(self, player.controls.RandomMovementControls(self))
-        monster.speed = 5.0
-        monster.location = self.map.get_random_cell(Map.CELL_TYPE_FLOOR)
-        self.monsters.append((monster, (255, 0, 255)))
+        # Harmless
+        for _ in xrange(3):
 
-        # Follower
-        monster_controls = player.controls.MonsterControls(self)
-        monster_controls.set_target(self.player)
-        monster_controls.target_distance = (10, 20)
-        monster = player.Player(self, monster_controls)
-        monster.location = self.map.get_random_cell(Map.CELL_TYPE_FLOOR)
-        monster.speed = 4.0
-        self.monsters.append((monster, (255, 128, 0)))
+            monster = player.Player(self, player.controls.RandomMovementControls(self))
+            monster.speed = 3.0
 
-        # Another follower
-        monster_controls = player.controls.MonsterControls(self)
-        monster_controls.set_target(self.player)
-        monster_controls.target_distance = (10, 15)
-        monster = player.Player(self, monster_controls)
-        monster.location = self.map.get_random_cell(Map.CELL_TYPE_FLOOR)
-        monster.speed = 3.0
-        self.monsters.append((monster, (255, 255, 0)))
+            monster.location = random.choice(empty_cells)
+            empty_cells.remove(monster.location)
+
+            self.monsters.append((monster, (255, 0, 255)))
+
+        # Agressive
+        for _ in xrange(3):
+
+            monster_controls = player.controls.MonsterControls(self)
+            monster_controls.set_target(self.player)
+            monster_controls.target_distance = (10, 15)
+            monster_controls.walk_speed = 3.0
+            monster_controls.attack_speed = 5.0
+
+            monster = player.Player(self, monster_controls)
+
+            monster.location = random.choice(empty_cells)
+            empty_cells.remove(monster.location)
+
+            self.monsters.append((monster, (255, 128, 0)))
 
         # Init drawing surfaces
         self.update_map = True

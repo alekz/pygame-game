@@ -47,11 +47,18 @@ class Map(object):
         else:
             return False
 
+    def get_cells(self, cell_type=None):
+        if cell_type is None:
+            cells = ((x, y) for x in xrange(self.width)
+                            for y in xrange(self.height))
+        else:
+            cells = ((x, y) for x in xrange(self.width)
+                            for y in xrange(self.height)
+                            if self.get_cell((x, y)) == cell_type)
+        return cells
+
     def get_random_cell(self, cell_type=None):
-        cells = ((x, y) for x in xrange(self.width) for y in xrange(self.height))
-        if type:
-            cells = (cell for cell in cells if self.get_cell(cell) == cell_type)
-        return random.choice(list(cells))
+        return random.choice(list(self.get_cells(cell_type)))
 
     def get_adjacent_cells(self, coord, cell_type=None):
 
