@@ -12,6 +12,7 @@ class Player(object):
         self.location = (0, 0) # Cell coordinates within a map
         self.offset = (0, 0) # Offset within a cell, -1.0..1.0
         self.speed = 5.0 # Cells per second
+        self.location_changed = False
 
         if controls is None:
             controls = controls.NoMovementControls()
@@ -34,6 +35,8 @@ class Player(object):
     offset = property(get_offset, set_offset)
 
     def update(self, milliseconds):
+
+        self.location_changed = False
 
         new_direction = self.controls.get_movement_direction()
 
@@ -64,8 +67,10 @@ class Player(object):
             # Move a bit
             self._offset[i] += k * self.speed * milliseconds / 1000.0
 
-            # Check if moved outside of the current cell
+            # Check if moved outside of the current cell, i.e. player's location has changed
             if abs(self._offset[i]) >= 1.0:
+
+                self.location_changed = True
 
                 # Moved to a neighbouring cell
                 self._location[i] += k

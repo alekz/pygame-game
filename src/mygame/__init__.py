@@ -88,6 +88,11 @@ class Game(BaseGame):
         self.map = Map(self, map_size, map_generator)
         empty_cells = list(self.map.get_cells(Map.CELL_TYPE_FLOOR))
 
+        # Init cookies
+        self.cookies = random.sample(empty_cells, 25)
+        for cookie_coord in self.cookies:
+            empty_cells.remove(cookie_coord)
+
         # Init player
         self.player = player.Player(self, player.controls.HumanPlayerControls(self))
         self.player.speed = 10.0
@@ -133,13 +138,22 @@ class Game(BaseGame):
         self.map_surface = pygame.Surface(self.screen_size)
 
     def on_update(self, milliseconds):
+
+        # Update player
         self.player.update(milliseconds)
+        if self.player.location_changed:
+            # Check if player ate a cookie
+            if self.player.location in self.cookies:
+                self.cookies.remove(self.player.location)
+
+        # Update monsters
         for monster, _ in self.monsters:
             monster.update(milliseconds)
 
     def on_draw(self, milliseconds):
         self._clear_screen()
         self._draw_map()
+        self._draw_cookies()
         self._draw_monsters()
         self._draw_player()
         self._draw_fps()
@@ -166,6 +180,12 @@ class Game(BaseGame):
             if hasattr(monster.controls, 'is_following') and monster.controls.is_following:
                 color = (255, 0, 0)
             self._paint_cell(color, monster.location, monster.offset)
+
+    def _draw_cookies(self):
+        for cookie_coord in self.cookies:
+            x = self.cell_size[0] * cookie_coord[0] + self.cell_size[0] / 2
+            y = self.cell_size[1] * cookie_coord[1] + self.cell_size[1] / 2
+            pygame.draw.circle(self.screen, (255, 255, 0), (x, y), 2)
 
     def _draw_fps(self):
         #fps = self.clock.get_fps()
