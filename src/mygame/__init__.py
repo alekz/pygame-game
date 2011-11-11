@@ -3,7 +3,7 @@ import math
 
 import pygame
 
-from mygame import player
+from mygame.player import Player
 from mygame.map import generator, Map
 
 class BaseGame(object):
@@ -94,9 +94,7 @@ class Game(BaseGame):
             empty_cells.remove(cookie_coord)
 
         # Init player
-        self.player = player.Player(self, player.controls.HumanPlayerControls(self))
-        self.player.speed = 10.0
-        self.player.location = random.choice(empty_cells)
+        self.player = Player.create_human_player(self, location=random.choice(empty_cells))
 
         # Make sure monsters are generated at some distance from the player
         empty_cells = list((x, y) for (x, y) in empty_cells
@@ -108,29 +106,14 @@ class Game(BaseGame):
 
         # Harmless
         for _ in xrange(3):
-
-            monster = player.Player(self, player.controls.RandomMovementControls(self))
-            monster.speed = 3.0
-
-            monster.location = random.choice(empty_cells)
+            monster = Player.create_harmless_monster(self, location=random.choice(empty_cells))
             empty_cells.remove(monster.location)
-
             self.monsters.append((monster, (0, 128, 255)))
 
         # Agressive
         for _ in xrange(3):
-
-            monster_controls = player.controls.MonsterControls(self)
-            monster_controls.set_target(self.player)
-            monster_controls.target_distance = (10, 15)
-            monster_controls.walk_speed = 3.0
-            monster_controls.attack_speed = 5.0
-
-            monster = player.Player(self, monster_controls)
-
-            monster.location = random.choice(empty_cells)
+            monster = Player.create_agressive_monster(self, self.player, location=random.choice(empty_cells))
             empty_cells.remove(monster.location)
-
             self.monsters.append((monster, (255, 0, 255)))
 
         # Init drawing surfaces

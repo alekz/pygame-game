@@ -6,6 +6,32 @@ from mygame.types import direction
 
 class Player(object):
 
+    @classmethod
+    def create_player(cls, game, controls, speed=None, location=None):
+        player = cls(game, controls)
+        if speed is not None:
+            player.speed = speed
+        if location is not None:
+            player.location = location
+        return player
+
+    @classmethod
+    def create_human_player(cls, game, **kwargs):
+        return cls.create_player(game, controls.HumanPlayerControls(game), speed=10.0, **kwargs)
+
+    @classmethod
+    def create_harmless_monster(cls, game, **kwargs):
+        return cls.create_player(game, controls.RandomMovementControls(game), speed=3.0, **kwargs)
+
+    @classmethod
+    def create_agressive_monster(cls, game, target, **kwargs):
+        player_controls = controls.MonsterControls(game)
+        player_controls.set_target(target)
+        player_controls.target_distance = (10, 15)
+        player_controls.walk_speed = 3.0
+        player_controls.attack_speed = 5.0
+        return cls.create_player(game, player_controls, speed=3.0, **kwargs)
+
     def __init__(self, game, controls):
         self._game = game
         self._map = game.map
