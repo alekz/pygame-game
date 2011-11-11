@@ -110,7 +110,7 @@ class Game(BaseGame):
             monster.location = random.choice(empty_cells)
             empty_cells.remove(monster.location)
 
-            self.monsters.append((monster, (255, 0, 255)))
+            self.monsters.append((monster, (0, 128, 255)))
 
         # Agressive
         for _ in xrange(3):
@@ -126,7 +126,7 @@ class Game(BaseGame):
             monster.location = random.choice(empty_cells)
             empty_cells.remove(monster.location)
 
-            self.monsters.append((monster, (255, 128, 0)))
+            self.monsters.append((monster, (255, 0, 255)))
 
         # Init drawing surfaces
         self.update_map = True
