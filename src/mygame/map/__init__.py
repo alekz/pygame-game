@@ -1,9 +1,10 @@
 import random
 
-class Map(object):
+class Cell(object):
+    FLOOR = 0
+    WALL = 1
 
-    CELL_TYPE_FLOOR = 0
-    CELL_TYPE_WALL = 1
+class Map(object):
 
     def __init__(self, game, size, map_generator):
         self.game = game
@@ -15,8 +16,8 @@ class Map(object):
 
         # List of colors for each cell type
         self.colors = {
-                       Map.CELL_TYPE_FLOOR: (  0,   0,   0),
-                       Map.CELL_TYPE_WALL:  (128, 128, 128),
+                       Cell.FLOOR: (  0,   0,   0),
+                       Cell.WALL:  (128, 128, 128),
                        }
 
         # Generate random map
@@ -43,7 +44,7 @@ class Map(object):
 
     def can_move_to(self, coord):
         if (0 <= coord[0] < self.width) and (0 <= coord[1] < self.height):
-            return self.get_cell(coord) == Map.CELL_TYPE_FLOOR
+            return self.get_cell(coord) == Cell.FLOOR
         else:
             return False
 

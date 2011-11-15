@@ -4,7 +4,7 @@ import math
 import pygame
 
 from mygame.types import direction
-from mygame.map import Map
+from mygame.map import Cell
 
 class PlayerControls(object):
 
@@ -173,7 +173,7 @@ class FollowPlayerControls(PlayerControls):
                 break
 
             # Find cells adjacent to the "best" cell
-            adjacent_cells = game_map.get_adjacent_cells(best_cell_coord, Map.CELL_TYPE_FLOOR)
+            adjacent_cells = game_map.get_adjacent_cells(best_cell_coord, Cell.FLOOR)
 
             # Add these adjacent cells to the open list, but only if they
             # are not present in the closed list

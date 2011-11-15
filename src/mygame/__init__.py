@@ -4,7 +4,7 @@ import math
 import pygame
 
 from mygame.player import Player
-from mygame.map import generator, Map
+from mygame.map import generator, Map, Cell
 
 class BaseGame(object):
 
@@ -86,7 +86,7 @@ class Game(BaseGame):
         map_size = tuple(int(self.screen_size[i] / self.cell_size[i]) for i in (0, 1))
         map_generator = generator.MazeGenerator()
         self.map = Map(self, map_size, map_generator)
-        empty_cells = list(self.map.get_cells(Map.CELL_TYPE_FLOOR))
+        empty_cells = list(self.map.get_cells(Cell.FLOOR))
 
         # Init cookies
         self.cookies = random.sample(empty_cells, 25)
@@ -148,8 +148,8 @@ class Game(BaseGame):
             if bomb.is_exploding():
                 for coord, damage in bomb.get_damaged_cells():
                     cell = self.map.get_cell(coord)
-                    if cell == Map.CELL_TYPE_WALL:
-                        self.map.set_cell(coord, Map.CELL_TYPE_FLOOR)
+                    if cell == Cell.WALL:
+                        self.map.set_cell(coord, Cell.FLOOR)
                 bombs_exploded = True
                 self.bombs.remove(bomb)
 
