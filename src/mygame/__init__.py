@@ -124,37 +124,35 @@ class Game(BaseGame):
         self.map_surface = pygame.Surface(self.screen_size)
 
     def on_update(self, milliseconds):
+        self._update_player(milliseconds)
+        self._update_monsters(milliseconds)
+        self._update_bombs(milliseconds)
 
-        # Update player
+    def _update_player(self, milliseconds):
         self.player.update(milliseconds)
         if self.player.location_changed:
             # Check if player ate a cookie
             if self.player.location in self.cookies:
                 self.cookies.remove(self.player.location)
 
-        # Update monsters
+    def _update_monsters(self, milliseconds):
         for monster, _ in self.monsters:
             monster.update(milliseconds)
 
-        # Update bombs
+    def _update_bombs(self, milliseconds):
+
         bombs_exploded = False
+
         for bomb in self.bombs:
-            bomb[1] -= milliseconds
-            if bomb[1] <= 0:
-                # BOOM!!!
-                bx, by = bomb[0]
-                r = 3
-                for dx in xrange(-r, r + 1):
-                    for dy in xrange(-r, r + 1):
-                        d = math.sqrt(dx ** 2 + dy ** 2)
-                        if d < r:
-                            x = bx + dx
-                            y = by + dy
-                            cell = self.map.get_cell((x, y))
-                            if cell == Map.CELL_TYPE_WALL:
-                                self.map.set_cell((x, y), Map.CELL_TYPE_FLOOR)
+            bomb.update(milliseconds)
+            if bomb.is_exploding():
+                for coord, damage in bomb.get_damaged_cells():
+                    cell = self.map.get_cell(coord)
+                    if cell == Map.CELL_TYPE_WALL:
+                        self.map.set_cell(coord, Map.CELL_TYPE_FLOOR)
                 bombs_exploded = True
                 self.bombs.remove(bomb)
+
         if bombs_exploded:
             self.update_map = True
 
@@ -197,10 +195,10 @@ class Game(BaseGame):
             pygame.draw.circle(self.screen, (255, 255, 0), (x, y), 2)
 
     def _draw_bombs(self):
-        for coord, time_until_explosion in self.bombs:
-            x = self.cell_size[0] * coord[0] + self.cell_size[0] / 2
-            y = self.cell_size[1] * coord[1] + self.cell_size[1] / 2
-            if time_until_explosion % 1000 <= 500:
+        for bomb in self.bombs:
+            x = self.cell_size[0] * bomb.location[0] + self.cell_size[0] / 2
+            y = self.cell_size[1] * bomb.location[1] + self.cell_size[1] / 2
+            if bomb.time_to_explode % 1000 <= 500:
                 color = (255, 0, 0)
             else:
                 color = (128, 0, 0)

@@ -3,6 +3,7 @@ import pygame
 
 from mygame.player import controls
 from mygame.types import direction
+from mygame import objects
 
 class Player(object):
 
@@ -158,5 +159,6 @@ class Player(object):
         if can_plant_bomb:
             self._time_until_next_bomb = 0
             if self.controls.is_planting_bomb():
-                self._game.bombs.append([self.location, 5000])
+                bomb = objects.Bomb(self.location, 5000)
+                self._game.bombs.append(bomb)
                 self._time_until_next_bomb += self._min_time_between_bombs
