@@ -33,14 +33,23 @@ class Player(object):
         return cls.create_player(game, player_controls, speed=3.0, **kwargs)
 
     def __init__(self, game, controls):
+
+        # Global objects
         self._game = game
         self._map = game.map
-        self._direction = direction.NONE
+
+        # Player properties
         self._speed = 5.0 # Cells per second
-        self._location_changed = False
+        self._min_time_between_bombs = 1000 # in milliseconds
+
+        # Player state
         self.location = (0, 0) # Cell coordinates within a map
         self.offset = (0, 0) # Offset within a cell, -1.0..1.0
+        self._direction = direction.NONE
+        self._location_changed = False
+        self._time_until_next_bomb = 0
 
+        # Player controls
         if controls is None:
             controls = controls.NoMovementControls()
         self.set_controls(controls)
@@ -82,6 +91,10 @@ class Player(object):
         return self._direction
 
     def update(self, milliseconds):
+        self._update_movement(milliseconds)
+        self._update_action(milliseconds)
+
+    def _update_movement(self, milliseconds):
 
         self._location_changed = False
 
@@ -136,3 +149,14 @@ class Player(object):
                 if stop:
                     self._offset[i] = 0.0
                     self._direction = direction.NONE
+
+    def _update_action(self, milliseconds):
+
+        self._time_until_next_bomb -= milliseconds
+        can_plant_bomb = self._time_until_next_bomb <= 0
+
+        if can_plant_bomb:
+            self._time_until_next_bomb = 0
+            if self.controls.is_planting_bomb():
+                self._game.bombs.append([self.location, 5000])
+                self._time_until_next_bomb += self._min_time_between_bombs

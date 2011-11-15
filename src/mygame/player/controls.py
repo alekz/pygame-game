@@ -21,6 +21,8 @@ class PlayerControls(object):
     def get_movement_direction(self):
         raise NotImplementedError
 
+    def is_planting_bomb(self):
+        return False
 
 class CompositePlayerControls(PlayerControls):
 
@@ -73,6 +75,8 @@ class HumanPlayerControls(PlayerControls):
 
         return direction.NONE
 
+    def is_planting_bomb(self):
+        return pygame.key.get_pressed()[pygame.K_SPACE]
 
 class RandomMovementControls(PlayerControls):
 

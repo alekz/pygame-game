@@ -93,6 +93,9 @@ class Game(BaseGame):
         for cookie_coord in self.cookies:
             empty_cells.remove(cookie_coord)
 
+        # Init bombs
+        self.bombs = [] # List of bombs (coord, explodes in milliseconds)
+
         # Init player
         self.player = Player.create_human_player(self, location=random.choice(empty_cells))
 
@@ -133,10 +136,33 @@ class Game(BaseGame):
         for monster, _ in self.monsters:
             monster.update(milliseconds)
 
+        # Update bombs
+        bombs_exploded = False
+        for bomb in self.bombs:
+            bomb[1] -= milliseconds
+            if bomb[1] <= 0:
+                # BOOM!!!
+                bx, by = bomb[0]
+                r = 3
+                for dx in xrange(-r, r + 1):
+                    for dy in xrange(-r, r + 1):
+                        d = math.sqrt(dx ** 2 + dy ** 2)
+                        if d < r:
+                            x = bx + dx
+                            y = by + dy
+                            cell = self.map.get_cell((x, y))
+                            if cell == Map.CELL_TYPE_WALL:
+                                self.map.set_cell((x, y), Map.CELL_TYPE_FLOOR)
+                bombs_exploded = True
+                self.bombs.remove(bomb)
+        if bombs_exploded:
+            self.update_map = True
+
     def on_draw(self, milliseconds):
         self._clear_screen()
         self._draw_map()
         self._draw_cookies()
+        self._draw_bombs()
         self._draw_monsters()
         self._draw_player()
         self._draw_fps()
@@ -165,10 +191,20 @@ class Game(BaseGame):
             self._paint_cell(color, monster.location, monster.offset)
 
     def _draw_cookies(self):
-        for cookie_coord in self.cookies:
-            x = self.cell_size[0] * cookie_coord[0] + self.cell_size[0] / 2
-            y = self.cell_size[1] * cookie_coord[1] + self.cell_size[1] / 2
+        for coord in self.cookies:
+            x = self.cell_size[0] * coord[0] + self.cell_size[0] / 2
+            y = self.cell_size[1] * coord[1] + self.cell_size[1] / 2
             pygame.draw.circle(self.screen, (255, 255, 0), (x, y), 2)
+
+    def _draw_bombs(self):
+        for coord, time_until_explosion in self.bombs:
+            x = self.cell_size[0] * coord[0] + self.cell_size[0] / 2
+            y = self.cell_size[1] * coord[1] + self.cell_size[1] / 2
+            if time_until_explosion % 1000 <= 500:
+                color = (255, 0, 0)
+            else:
+                color = (128, 0, 0)
+            pygame.draw.circle(self.screen, color, (x, y), 4)
 
     def _draw_fps(self):
         #fps = self.clock.get_fps()
