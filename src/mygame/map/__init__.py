@@ -1,18 +1,48 @@
 import random
 
 class Cell(object):
+
     FLOOR = 0
     WALL = 1
+
+    def __init__(self, coord, cell_type=FLOOR, health=1.0):
+        self.coord = coord
+        self.type = cell_type
+        self.health = health
+
+    @property
+    def x(self):
+        return self.coord[0]
+
+    @property
+    def y(self):
+        return self.coord[1]
+
+    @property
+    def draw_color(self):
+        if self.type == Cell.FLOOR:
+            return (16, 16, 0)
+        if self.type == Cell.WALL:
+            health = max(min(self.health, 1.0), 0.0)
+            color = 64 + health * (192 - 64)
+            return (color, color, color)
+        return (0, 0, 0)
+
+    def hit(self, damage):
+        if self.type == Cell.WALL:
+            self.health -= damage
+            if self.health <= 0:
+                self.type = Cell.FLOOR
 
 class Map(object):
 
     def __init__(self, game, size, map_generator):
+
         self.game = game
         self.size = size
 
         # Generate empty map
-        empty_col = [0] * self.height
-        self.cells = [empty_col[:] for _ in xrange(self.width)]
+        self.cells = [[Cell((x, y)) for y in xrange(self.height)] for x in xrange(self.width)]
 
         # List of colors for each cell type
         self.colors = {
@@ -23,39 +53,38 @@ class Map(object):
         # Generate random map
         map_generator.generate(self)
 
-    def get_width(self):
+    @property
+    def width(self):
         return self.size[0]
-    width = property(get_width)
 
-    def get_height(self):
+    @property
+    def height(self):
         return self.size[1]
-    height = property(get_height)
 
-    def get_cell(self, coord):
-        x, y = coord
+    def __call__(self, x, y=None):
+
+        if hasattr(x, '__iter__'):
+            x, y = x
+
         if 0 <= x < self.width and 0 <= y < self.height:
             return self.cells[x][y]
         else:
             return None
 
-    def set_cell(self, coord, cell_type):
-        x, y = coord
-        self.cells[x][y] = cell_type
-
     def can_move_to(self, coord):
         if (0 <= coord[0] < self.width) and (0 <= coord[1] < self.height):
-            return self.get_cell(coord) == Cell.FLOOR
+            return self(coord).type == Cell.FLOOR
         else:
             return False
 
     def get_cells(self, cell_type=None):
         if cell_type is None:
-            cells = ((x, y) for x in xrange(self.width)
-                            for y in xrange(self.height))
+            cells = (self(x, y) for x in xrange(self.width)
+                                for y in xrange(self.height))
         else:
-            cells = ((x, y) for x in xrange(self.width)
-                            for y in xrange(self.height)
-                            if self.get_cell((x, y)) == cell_type)
+            cells = (self(x, y) for x in xrange(self.width)
+                                for y in xrange(self.height)
+                                if self(x, y).type == cell_type)
         return cells
 
     def get_random_cell(self, cell_type=None):
@@ -67,9 +96,9 @@ class Map(object):
 
         for dx, dy in ((-1, 0), (+1, 0), (0, -1), (0, +1)):
             adjacent_coord = (coord[0] + dx, coord[1] + dy)
-            adjacent_cell = self.get_cell(adjacent_coord)
+            adjacent_cell = self(adjacent_coord)
             if adjacent_cell is not None:
-                if cell_type in (None, adjacent_cell):
-                    adjacent_cells.append(adjacent_coord)
+                if cell_type in (None, adjacent_cell.type):
+                    adjacent_cells.append(adjacent_cell)
 
         return adjacent_cells

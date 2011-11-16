@@ -1,12 +1,17 @@
 import math
+import random
 
 class Bomb(object):
 
-    def __init__(self, coord, time_to_explode):
+    def __init__(self, coord, time_to_explode=3000):
         self.location = coord
         self.time_to_explode = time_to_explode
-        self.explosion_radius = 3.0
-        self.max_damage = 1.0
+        #self.max_damage = 1 + 4 * random.random()
+        self.max_damage = 2.0
+
+    @property
+    def explosion_radius(self):
+        return (8 * self.max_damage) ** 0.5
 
     def update(self, milliseconds):
         self.time_to_explode -= milliseconds
@@ -25,5 +30,5 @@ class Bomb(object):
                 if d <= r:
                     x = self.location[0] + dx
                     y = self.location[1] + dy
-                    damage = self.max_damage * (d / r)
+                    damage = self.max_damage * (1 - (d / r) ** 2)
                     yield ((x, y), damage)

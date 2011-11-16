@@ -177,22 +177,22 @@ class FollowPlayerControls(PlayerControls):
 
             # Add these adjacent cells to the open list, but only if they
             # are not present in the closed list
-            for adjacent_cell_coord in adjacent_cells:
-                if not closed_list.has_key(adjacent_cell_coord):
+            for cell in adjacent_cells:
+                if not closed_list.has_key(cell.coord):
 
                     # Distance from our position to the current cell
                     g = best_cell[1] + 1
 
-                    if not open_list.has_key(adjacent_cell_coord):
+                    if not open_list.has_key(cell.coord):
 
                         # Add new cell to the open list
-                        h = self._get_distance_to_target(adjacent_cell_coord)
-                        open_list[adjacent_cell_coord] = (best_cell_coord, g, h)
+                        h = self._get_distance_to_target(cell.coord)
+                        open_list[cell.coord] = (best_cell_coord, g, h)
 
-                    elif g < open_list[adjacent_cell_coord][1]:
+                    elif g < open_list[cell.coord][1]:
 
                         # This cell already exists in the open list, but we've found a better route
-                        open_list[adjacent_cell_coord] = (best_cell_coord, g, open_list[adjacent_cell_coord][2])
+                        open_list[cell.coord] = (best_cell_coord, g, open_list[cell.coord][2])
 
         return new_direction
 

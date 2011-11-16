@@ -89,34 +89,38 @@ class Game(BaseGame):
         empty_cells = list(self.map.get_cells(Cell.FLOOR))
 
         # Init cookies
-        self.cookies = random.sample(empty_cells, 25)
-        for cookie_coord in self.cookies:
-            empty_cells.remove(cookie_coord)
+        self.cookies = []
+        for _ in range(25):
+            cell = random.choice(empty_cells)
+            empty_cells.remove(cell)
+            self.cookies.append(cell.coord)
 
         # Init bombs
-        self.bombs = [] # List of bombs (coord, explodes in milliseconds)
+        self.bombs = []
 
         # Init player
-        self.player = Player.create_human_player(self, location=random.choice(empty_cells))
+        self.player = Player.create_human_player(self, location=random.choice(empty_cells).coord)
 
         # Make sure monsters are generated at some distance from the player
-        empty_cells = list((x, y) for (x, y) in empty_cells
-                                  if 15 < math.sqrt((x - self.player.location[0]) ** 2 +
-                                                    (y - self.player.location[1]) ** 2))
+        empty_cells = list(cell for cell in empty_cells
+                                if 15 < math.sqrt((cell.x - self.player.location[0]) ** 2 +
+                                                  (cell.y - self.player.location[1]) ** 2))
 
         # Init monsters
         self.monsters = []
 
         # Harmless
         for _ in xrange(3):
-            monster = Player.create_harmless_monster(self, location=random.choice(empty_cells))
-            empty_cells.remove(monster.location)
+            cell = random.choice(empty_cells)
+            empty_cells.remove(cell)
+            monster = Player.create_harmless_monster(self, location=cell.coord)
             self.monsters.append((monster, (0, 128, 255)))
 
         # Agressive
         for _ in xrange(3):
-            monster = Player.create_agressive_monster(self, self.player, location=random.choice(empty_cells))
-            empty_cells.remove(monster.location)
+            cell = random.choice(empty_cells)
+            empty_cells.remove(cell)
+            monster = Player.create_agressive_monster(self, self.player, location=cell.coord)
             self.monsters.append((monster, (255, 0, 255)))
 
         # Init drawing surfaces
@@ -147,9 +151,9 @@ class Game(BaseGame):
             bomb.update(milliseconds)
             if bomb.is_exploding():
                 for coord, damage in bomb.get_damaged_cells():
-                    cell = self.map.get_cell(coord)
-                    if cell == Cell.WALL:
-                        self.map.set_cell(coord, Cell.FLOOR)
+                    cell = self.map(coord)
+                    if cell:
+                        cell.hit(damage)
                 bombs_exploded = True
                 self.bombs.remove(bomb)
 
@@ -172,9 +176,8 @@ class Game(BaseGame):
         if self.update_map:
             for x in xrange(self.map.width):
                 for y in xrange(self.map.height):
-                    cell_type = self.map.cells[x][y]
-                    color = self.map.colors[cell_type]
-                    self._paint_cell(color, (x, y), surface=self.map_surface)
+                    cell = self.map(x, y)
+                    self._paint_cell(cell.draw_color, (x, y), surface=self.map_surface)
             self.update_map = False
         self.screen.blit(self.map_surface, (0, 0))
 

@@ -159,6 +159,6 @@ class Player(object):
         if can_plant_bomb:
             self._time_until_next_bomb = 0
             if self.controls.is_planting_bomb():
-                bomb = objects.Bomb(self.location, 5000)
+                bomb = objects.Bomb(self.location)
                 self._game.bombs.append(bomb)
                 self._time_until_next_bomb += self._min_time_between_bombs
