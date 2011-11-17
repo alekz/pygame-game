@@ -19,7 +19,7 @@ class Cell(object):
         return self.coord[1]
 
     @property
-    def draw_color(self):
+    def color(self):
         if self.type == Cell.FLOOR:
             return (16, 16, 0)
         if self.type == Cell.WALL:

@@ -114,14 +114,16 @@ class Game(BaseGame):
             cell = random.choice(empty_cells)
             empty_cells.remove(cell)
             monster = Player.create_harmless_monster(self, location=cell.coord)
-            self.monsters.append((monster, (0, 128, 255)))
+            monster.color = (0, 128, 255)
+            self.monsters.append(monster)
 
         # Agressive
         for _ in xrange(3):
             cell = random.choice(empty_cells)
             empty_cells.remove(cell)
             monster = Player.create_agressive_monster(self, self.player, location=cell.coord)
-            self.monsters.append((monster, (255, 0, 255)))
+            monster.color = (255, 0, 255)
+            self.monsters.append(monster)
 
         # Init drawing surfaces
         self.update_map = True
@@ -140,7 +142,7 @@ class Game(BaseGame):
                 self.cookies.remove(self.player.location)
 
     def _update_monsters(self, milliseconds):
-        for monster, _ in self.monsters:
+        for monster in self.monsters:
             monster.update(milliseconds)
 
     def _update_bombs(self, milliseconds):
@@ -153,7 +155,25 @@ class Game(BaseGame):
                 for coord, damage in bomb.get_damaged_cells():
                     cell = self.map(coord)
                     if cell:
+
+                        # Damage map
                         cell.hit(damage)
+
+                        # Damage cookies
+                        for cookie_coord in self.cookies:
+                            if cookie_coord == coord:
+                                self.cookies.remove(cookie_coord)
+
+                        # Damage monsters
+                        killed_monsters = []
+                        for monster in self.monsters:
+                            if monster.location == coord:
+                                monster.hit(damage)
+                                if monster.is_dead():
+                                    killed_monsters.append(monster)
+                        for monster in killed_monsters:
+                            self.monsters.remove(monster)
+
                 bombs_exploded = True
                 self.bombs.remove(bomb)
 
@@ -177,7 +197,7 @@ class Game(BaseGame):
             for x in xrange(self.map.width):
                 for y in xrange(self.map.height):
                     cell = self.map(x, y)
-                    self._paint_cell(cell.draw_color, (x, y), surface=self.map_surface)
+                    self._paint_cell(cell.color, (x, y), surface=self.map_surface)
             self.update_map = False
         self.screen.blit(self.map_surface, (0, 0))
 
@@ -186,7 +206,8 @@ class Game(BaseGame):
         self._paint_cell(color, self.player.location, self.player.offset)
 
     def _draw_monsters(self):
-        for monster, color in self.monsters:
+        for monster in self.monsters:
+            color = monster.color
             if hasattr(monster.controls, 'is_following') and monster.controls.is_following:
                 color = (255, 0, 0)
             self._paint_cell(color, monster.location, monster.offset)

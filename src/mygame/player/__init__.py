@@ -42,6 +42,7 @@ class Player(object):
         # Player properties
         self._speed = 5.0 # Cells per second
         self._min_time_between_bombs = 1000 # in milliseconds
+        self.health = 1.0
 
         # Player state
         self.location = (0, 0) # Cell coordinates within a map
@@ -90,6 +91,12 @@ class Player(object):
     @property
     def direction(self):
         return self._direction
+
+    def is_dead(self):
+        return self.health <= 0
+
+    def hit(self, damage):
+        self.health -= damage
 
     def update(self, milliseconds):
         self._update_movement(milliseconds)
