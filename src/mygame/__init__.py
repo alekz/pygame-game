@@ -109,20 +109,32 @@ class Game(BaseGame):
         # Init monsters
         self.monsters = []
 
+        harmless_monsters_count = 1
+        coward_monsters_count = 1
+        agressive_monsters_count = 5
+
         # Harmless
-        for _ in xrange(3):
+        for _ in xrange(harmless_monsters_count):
             cell = random.choice(empty_cells)
             empty_cells.remove(cell)
             monster = Player.create_harmless_monster(self, location=cell.coord)
             monster.color = (0, 128, 255)
             self.monsters.append(monster)
 
+        # Coward
+        for _ in xrange(coward_monsters_count):
+            cell = random.choice(empty_cells)
+            empty_cells.remove(cell)
+            monster = Player.create_coward_monster(self, self.player, location=cell.coord)
+            monster.color = (255, 0, 255)
+            self.monsters.append(monster)
+
         # Agressive
-        for _ in xrange(3):
+        for _ in xrange(agressive_monsters_count):
             cell = random.choice(empty_cells)
             empty_cells.remove(cell)
             monster = Player.create_agressive_monster(self, self.player, location=cell.coord)
-            monster.color = (255, 0, 255)
+            monster.color = (255, 128, 0)
             self.monsters.append(monster)
 
         # Init drawing surfaces

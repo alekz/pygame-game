@@ -122,11 +122,10 @@ class RandomMovementControls(PlayerControls):
         return new_direction
 
 
-class FollowPlayerControls(PlayerControls):
+class FollowControls(PlayerControls):
 
     def init(self):
         self.target = None
-        #self.last_target_location = (-1, -1)
 
     def set_target(self, target):
         self.target = target
@@ -242,12 +241,66 @@ class FollowPlayerControls(PlayerControls):
             return direction.NONE
 
 
-class MonsterControls(CompositePlayerControls):
+class RetreatControls(PlayerControls):
+
+    def init(self):
+        self.target = None
+
+    def set_target(self, target):
+        self.target = target
+
+    def get_movement_direction(self):
+
+        if not self.target:
+            # Target is not set, just stand still and don't move
+            return direction.NONE
+
+        if self.player.direction != direction.NONE:
+            # Still moving
+            return direction.NONE
+
+        x, y = self.player.location
+        tx, ty = self.target.location
+        distance = math.sqrt((tx - x) ** 2 + (ty - y) ** 2)
+
+        possible_cells = []
+        total_weight = 0
+
+        possible_directions = {
+                               direction.LEFT:  (-1,  0),
+                               direction.RIGHT: (+1,  0),
+                               direction.UP:    ( 0, -1),
+                               direction.DOWN:  ( 0, +1),
+                               }
+
+        for d, (dx, dy) in possible_directions.items():
+            cx, cy = x + dx, y + dy
+            if self.game.map.can_move_to((cx, cy)):
+                dd = math.sqrt((cx - tx) ** 2 + (cy - ty) ** 2) - distance
+                if dd < 0:
+                    weight = 11 + 10 * dd
+                else:
+                    weight = 100 + 100 * dd
+                total_weight += weight
+                possible_cells.append((d, weight))
+
+        if total_weight > 0:
+            r = random.random() * total_weight
+            sum_weight = 0
+            for d, weight in possible_cells:
+                sum_weight += weight
+                if r <= sum_weight:
+                    return d
+
+        return direction.NONE
+
+
+class AgressiveMonsterControls(CompositePlayerControls):
 
     def init(self):
 
         self.add_controls('random', RandomMovementControls(self.game))
-        self.add_controls('follow', FollowPlayerControls(self.game))
+        self.add_controls('follow', FollowControls(self.game))
 
         self.target = None
         self.target_distance = None
@@ -258,7 +311,7 @@ class MonsterControls(CompositePlayerControls):
         self.attack_speed = None
 
     def set_player(self, player):
-        super(MonsterControls, self).set_player(player)
+        super(AgressiveMonsterControls, self).set_player(player)
         self.default_speed = player.speed
 
     def set_target(self, target):
@@ -280,5 +333,47 @@ class MonsterControls(CompositePlayerControls):
 
         if self.is_following:
             return self.get_movement_direction_from_controls('follow')
+        else:
+            return self.get_movement_direction_from_controls('random')
+
+
+class CowardMonsterControls(CompositePlayerControls):
+
+    def init(self):
+
+        self.add_controls('random', RandomMovementControls(self.game))
+        self.add_controls('retreat', RetreatControls(self.game))
+
+        self.target = None
+        self.target_distance = None
+        self.is_retreating = False
+
+        self.default_speed = None
+        self.walk_speed = None
+        self.retreat_speed = None
+
+    def set_player(self, player):
+        super(CowardMonsterControls, self).set_player(player)
+        self.default_speed = player.speed
+
+    def set_target(self, target):
+        self.target = target
+        self.controls['retreat'].set_target(target)
+
+    def get_movement_direction(self):
+        distance = math.sqrt(
+                             (self.player.location[0] - self.target.location[0]) ** 2 +
+                             (self.player.location[1] - self.target.location[1]) ** 2
+                            )
+
+        if not self.is_retreating and distance <= self.target_distance[0]:
+            self.is_retreating = True
+            self.player.speed = self.retreat_speed or self.default_speed
+        elif self.is_retreating and self.target_distance[1] < distance:
+            self.is_retreating = False
+            self.player.speed = self.walk_speed or self.default_speed
+
+        if self.is_retreating:
+            return self.get_movement_direction_from_controls('retreat')
         else:
             return self.get_movement_direction_from_controls('random')

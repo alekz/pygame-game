@@ -25,8 +25,17 @@ class Player(object):
         return cls.create_player(game, controls.RandomMovementControls(game), speed=3.0, **kwargs)
 
     @classmethod
+    def create_coward_monster(cls, game, target, **kwargs):
+        player_controls = controls.CowardMonsterControls(game)
+        player_controls.set_target(target)
+        player_controls.target_distance = (10, 15)
+        player_controls.walk_speed = 3.0
+        player_controls.retreat_speed = 8.0
+        return cls.create_player(game, player_controls, speed=3.0, **kwargs)
+
+    @classmethod
     def create_agressive_monster(cls, game, target, **kwargs):
-        player_controls = controls.MonsterControls(game)
+        player_controls = controls.AgressiveMonsterControls(game)
         player_controls.set_target(target)
         player_controls.target_distance = (10, 15)
         player_controls.walk_speed = 3.0
