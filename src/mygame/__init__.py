@@ -83,7 +83,12 @@ class Game(BaseGame):
         self.cell_size = (10, 10)
 
         # Init map
-        map_size = tuple(int(self.screen_size[i] / self.cell_size[i]) for i in (0, 1))
+        map_size = [0, 0]
+        for i in (0, 1):
+            map_size[i] = int(1.0 * self.screen_size[i] / self.cell_size[i])
+            if map_size[i] % 2 == 0:
+                map_size[i] -= 1
+        self.map_size_in_pixels = tuple(map_size[i] * self.cell_size[i] for i in (0, 1))
         map_generator = generator.MazeGenerator()
         self.map = Map(self, map_size, map_generator)
         empty_cells = list(self.map.get_cells(Cell.FLOOR))
@@ -139,7 +144,8 @@ class Game(BaseGame):
 
         # Init drawing surfaces
         self.update_map = True
-        self.map_surface = pygame.Surface(self.screen_size)
+        self.map_surface = pygame.Surface(self.map_size_in_pixels)
+        self.draw_surface = pygame.Surface(self.map_size_in_pixels)
 
     def on_update(self, milliseconds):
         self._update_player(milliseconds)
@@ -200,18 +206,38 @@ class Game(BaseGame):
         self._draw_monsters()
         self._draw_player()
         self._draw_fps()
+        self._update_screen()
+
+    def _update_screen(self):
+        offset = [0, 0]
+        for i in (0, 1):
+            if self.map_size_in_pixels[i] <= self.screen_size[i]:
+                offset[i] = (self.screen_size[i] - self.map_size_in_pixels[i]) / 2
+            else:
+                player_offset = round(self.cell_size[i] * (self.player.location[i] + self.player.offset[i]))
+                offset[i] = self.screen_size[i] / 2 - player_offset
+                if offset[i] > 0:
+                    offset[i] = 0
+                elif offset[i] < self.screen_size[i] - self.map_size_in_pixels[i]:
+                    offset[i] = self.screen_size[i] - self.map_size_in_pixels[i]
+        self.screen.blit(self.draw_surface, offset)
 
     def _clear_screen(self):
         self.screen.fill((0, 0, 0))
+        self.draw_surface.fill((0, 0, 0))
 
     def _draw_map(self):
+
+        # Redraw the whole map
         if self.update_map:
             for x in xrange(self.map.width):
                 for y in xrange(self.map.height):
                     cell = self.map(x, y)
                     self._paint_cell(cell.color, (x, y), surface=self.map_surface)
             self.update_map = False
-        self.screen.blit(self.map_surface, (0, 0))
+
+        # Draw the map on the screen
+        self.draw_surface.blit(self.map_surface, (0, 0))
 
     def _draw_player(self):
         color = (0, 192, 0)
@@ -228,7 +254,7 @@ class Game(BaseGame):
         for coord in self.cookies:
             x = self.cell_size[0] * coord[0] + self.cell_size[0] / 2
             y = self.cell_size[1] * coord[1] + self.cell_size[1] / 2
-            pygame.draw.circle(self.screen, (255, 255, 0), (x, y), 2)
+            pygame.draw.circle(self.draw_surface, (255, 255, 0), (x, y), 2)
 
     def _draw_bombs(self):
         for bomb in self.bombs:
@@ -238,7 +264,7 @@ class Game(BaseGame):
                 color = (255, 0, 0)
             else:
                 color = (128, 0, 0)
-            pygame.draw.circle(self.screen, color, (x, y), 4)
+            pygame.draw.circle(self.draw_surface, color, (x, y), 4)
 
     def _draw_fps(self):
         #fps = self.clock.get_fps()
@@ -246,7 +272,7 @@ class Game(BaseGame):
         pass
 
     def _paint_cell(self, color, coord, offset=(0.0, 0.0), surface=None):
-        surface = surface or self.screen
+        surface = surface or self.draw_surface
         rect = pygame.rect.Rect((coord[0] + offset[0]) * self.cell_size[0],
                                 (coord[1] + offset[1]) * self.cell_size[1],
                                 self.cell_size[0],
