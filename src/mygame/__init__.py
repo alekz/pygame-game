@@ -143,7 +143,8 @@ class Game(BaseGame):
             self.monsters.append(monster)
 
         # Init drawing surfaces
-        self.update_map = True
+        self.redraw_cells = []
+        self.redraw_map = True
         self.map_surface = pygame.Surface(self.map_size_in_pixels)
         self.draw_surface = pygame.Surface(self.map_size_in_pixels)
 
@@ -165,14 +166,15 @@ class Game(BaseGame):
 
     def _update_bombs(self, milliseconds):
 
-        bombs_exploded = False
-
         for bomb in self.bombs:
             bomb.update(milliseconds)
             if bomb.is_exploding():
                 for coord, damage in bomb.get_damaged_cells():
                     cell = self.map(coord)
                     if cell:
+
+                        # Redraw this cell
+                        self.redraw_cells.append(coord)
 
                         # Damage map
                         cell.hit(damage)
@@ -192,11 +194,7 @@ class Game(BaseGame):
                         for monster in killed_monsters:
                             self.monsters.remove(monster)
 
-                bombs_exploded = True
                 self.bombs.remove(bomb)
-
-        if bombs_exploded:
-            self.update_map = True
 
     def on_draw(self, milliseconds):
         self._clear_screen()
@@ -228,13 +226,17 @@ class Game(BaseGame):
 
     def _draw_map(self):
 
-        # Redraw the whole map
-        if self.update_map:
-            for x in xrange(self.map.width):
-                for y in xrange(self.map.height):
-                    cell = self.map(x, y)
-                    self._paint_cell(cell.color, (x, y), surface=self.map_surface)
-            self.update_map = False
+        if self.redraw_map:
+            coords = ((x, y) for x in xrange(self.map.width)
+                             for y in xrange(self.map.height))
+        else:
+            coords = self.redraw_cells
+
+        if coords:
+            for coord in coords:
+                self._paint_cell(self.map(coord).color, coord, surface=self.map_surface)
+            self.redraw_map = False
+            self.redraw_cells = []
 
         # Draw the map on the screen
         self.draw_surface.blit(self.map_surface, (0, 0))
