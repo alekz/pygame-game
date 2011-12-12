@@ -5,6 +5,7 @@ import pygame
 
 from mygame.player import Player
 from mygame.map import generator, Map, Cell
+from mygame.objects import Coin
 
 class BaseGame(object):
 
@@ -93,12 +94,12 @@ class Game(BaseGame):
         self.map = Map(self, map_size, map_generator)
         empty_cells = list(self.map.get_cells(Cell.FLOOR))
 
-        # Init cookies
-        self.cookies = []
+        # Init coins
+        self.coins = []
         for _ in range(25):
             cell = random.choice(empty_cells)
             empty_cells.remove(cell)
-            self.cookies.append(cell.coord)
+            self.coins.append(Coin(cell.coord))
 
         # Init bombs
         self.bombs = []
@@ -149,62 +150,46 @@ class Game(BaseGame):
         self.draw_surface = pygame.Surface(self.map_size_in_pixels)
 
     def on_update(self, milliseconds):
-        self._update_player(milliseconds)
-        self._update_monsters(milliseconds)
-        self._update_bombs(milliseconds)
 
-    def _update_player(self, milliseconds):
-        self.player.update(milliseconds)
+        self.player.update(self, milliseconds)
         if self.player.location_changed:
-            # Check if player ate a cookie
-            if self.player.location in self.cookies:
-                self.cookies.remove(self.player.location)
+            # Check if player collected a coin
+            for coin in self.coins:
+                if not coin.is_destroyed():
+                    if coin.location == self.player.location:
+                        coin.collect()
 
-    def _update_monsters(self, milliseconds):
         for monster in self.monsters:
-            monster.update(milliseconds)
-
-    def _update_bombs(self, milliseconds):
+            monster.update(self, milliseconds)
 
         for bomb in self.bombs:
-            bomb.update(milliseconds)
-            if bomb.is_exploding():
-                for coord, damage in bomb.get_damaged_cells():
-                    cell = self.map(coord)
-                    if cell:
-
-                        # Redraw this cell
-                        self.redraw_cells.append(coord)
-
-                        # Damage map
-                        cell.hit(damage)
-
-                        # Damage cookies
-                        for cookie_coord in self.cookies:
-                            if cookie_coord == coord:
-                                self.cookies.remove(cookie_coord)
-
-                        # Damage monsters
-                        killed_monsters = []
-                        for monster in self.monsters:
-                            if monster.location == coord:
-                                monster.hit(damage)
-                                if monster.is_dead():
-                                    killed_monsters.append(monster)
-                        for monster in killed_monsters:
-                            self.monsters.remove(monster)
-
-                self.bombs.remove(bomb)
+            bomb.update(self, milliseconds)
 
     def on_draw(self, milliseconds):
+
         self._clear_screen()
-        self._draw_map()
-        self._draw_cookies()
-        self._draw_bombs()
+
+        self.map.draw(self, self.map_surface, milliseconds)
+        self.draw_surface.blit(self.map_surface, (0, 0))
+
+        for coin in self.coins:
+            if not coin.is_destroyed():
+                coin.draw(self, self.draw_surface, milliseconds)
+
+        for bomb in self.bombs:
+            if not bomb.is_destroyed():
+                bomb.draw(self, self.draw_surface, milliseconds)
+
         self._draw_monsters()
         self._draw_player()
+
         self._draw_fps()
+
         self._update_screen()
+
+    def _clear_screen(self):
+        self.screen.fill((0, 0, 0))
+        self.draw_surface.fill((0, 0, 0))
 
     def _update_screen(self):
         offset = [0, 0]
@@ -220,27 +205,6 @@ class Game(BaseGame):
                     offset[i] = self.screen_size[i] - self.map_size_in_pixels[i]
         self.screen.blit(self.draw_surface, offset)
 
-    def _clear_screen(self):
-        self.screen.fill((0, 0, 0))
-        self.draw_surface.fill((0, 0, 0))
-
-    def _draw_map(self):
-
-        if self.redraw_map:
-            coords = ((x, y) for x in xrange(self.map.width)
-                             for y in xrange(self.map.height))
-        else:
-            coords = self.redraw_cells
-
-        if coords:
-            for coord in coords:
-                self._paint_cell(self.map(coord).color, coord, surface=self.map_surface)
-            self.redraw_map = False
-            self.redraw_cells = []
-
-        # Draw the map on the screen
-        self.draw_surface.blit(self.map_surface, (0, 0))
-
     def _draw_player(self):
         color = (0, 192, 0)
         self._paint_cell(color, self.player.location, self.player.offset)
@@ -251,22 +215,6 @@ class Game(BaseGame):
             if hasattr(monster.controls, 'is_following') and monster.controls.is_following:
                 color = (255, 0, 0)
             self._paint_cell(color, monster.location, monster.offset)
-
-    def _draw_cookies(self):
-        for coord in self.cookies:
-            x = self.cell_size[0] * coord[0] + self.cell_size[0] / 2
-            y = self.cell_size[1] * coord[1] + self.cell_size[1] / 2
-            pygame.draw.circle(self.draw_surface, (255, 255, 0), (x, y), 2)
-
-    def _draw_bombs(self):
-        for bomb in self.bombs:
-            x = self.cell_size[0] * bomb.location[0] + self.cell_size[0] / 2
-            y = self.cell_size[1] * bomb.location[1] + self.cell_size[1] / 2
-            if bomb.time_to_explode % 1000 <= 500:
-                color = (255, 0, 0)
-            else:
-                color = (128, 0, 0)
-            pygame.draw.circle(self.draw_surface, color, (x, y), 4)
 
     def _draw_fps(self):
         #fps = self.clock.get_fps()

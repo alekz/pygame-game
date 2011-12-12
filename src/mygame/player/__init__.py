@@ -8,8 +8,8 @@ from mygame import objects
 class Player(object):
 
     @classmethod
-    def create_player(cls, game, controls, speed=None, location=None):
-        player = cls(game, controls)
+    def create_player(cls, controls, speed=None, location=None):
+        player = cls(controls)
         if speed is not None:
             player.speed = speed
         if location is not None:
@@ -18,11 +18,11 @@ class Player(object):
 
     @classmethod
     def create_human_player(cls, game, **kwargs):
-        return cls.create_player(game, controls.HumanPlayerControls(game), speed=10.0, **kwargs)
+        return cls.create_player(controls.HumanPlayerControls(game), speed=10.0, **kwargs)
 
     @classmethod
     def create_harmless_monster(cls, game, **kwargs):
-        return cls.create_player(game, controls.RandomMovementControls(game), speed=3.0, **kwargs)
+        return cls.create_player(controls.RandomMovementControls(game), speed=3.0, **kwargs)
 
     @classmethod
     def create_coward_monster(cls, game, target, **kwargs):
@@ -31,7 +31,7 @@ class Player(object):
         player_controls.target_distance = (10, 15)
         player_controls.walk_speed = 3.0
         player_controls.retreat_speed = 8.0
-        return cls.create_player(game, player_controls, speed=3.0, **kwargs)
+        return cls.create_player(player_controls, speed=3.0, **kwargs)
 
     @classmethod
     def create_agressive_monster(cls, game, target, **kwargs):
@@ -40,13 +40,9 @@ class Player(object):
         player_controls.target_distance = (10, 15)
         player_controls.walk_speed = 3.0
         player_controls.attack_speed = 5.0
-        return cls.create_player(game, player_controls, speed=3.0, **kwargs)
+        return cls.create_player(player_controls, speed=3.0, **kwargs)
 
-    def __init__(self, game, controls):
-
-        # Global objects
-        self._game = game
-        self._map = game.map
+    def __init__(self, controls):
 
         # Player properties
         self._speed = 5.0 # Cells per second
@@ -107,11 +103,11 @@ class Player(object):
     def hit(self, damage):
         self.health -= damage
 
-    def update(self, milliseconds):
-        self._update_movement(milliseconds)
-        self._update_action(milliseconds)
+    def update(self, game, milliseconds):
+        self._update_movement(game, milliseconds)
+        self._update_action(game, milliseconds)
 
-    def _update_movement(self, milliseconds):
+    def _update_movement(self, game, milliseconds):
 
         self._location_changed = False
 
@@ -124,7 +120,7 @@ class Player(object):
                 new_location = self._location[:]
                 i, k = direction.get_info(new_direction)
                 new_location[i] += k
-                if not self._map.can_move_to(new_location):
+                if not game.map.can_move_to(new_location):
                     new_direction = direction.NONE
                 else:
                     self._direction = new_direction
@@ -161,13 +157,13 @@ class Player(object):
                 else:
                     new_location = self._location[:]
                     new_location[i] += k
-                    if not self._map.can_move_to(new_location):
+                    if not game.map.can_move_to(new_location):
                         stop = True
                 if stop:
                     self._offset[i] = 0.0
                     self._direction = direction.NONE
 
-    def _update_action(self, milliseconds):
+    def _update_action(self, game, milliseconds):
 
         self._time_until_next_bomb -= milliseconds
         can_plant_bomb = self._time_until_next_bomb <= 0
@@ -176,5 +172,5 @@ class Player(object):
             self._time_until_next_bomb = 0
             if self.controls.is_planting_bomb():
                 bomb = objects.Bomb(self.location)
-                self._game.bombs.append(bomb)
+                game.bombs.append(bomb)
                 self._time_until_next_bomb += self._min_time_between_bombs

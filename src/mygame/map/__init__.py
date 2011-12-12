@@ -1,14 +1,19 @@
 import random
+import pygame
+from mygame.objects import GameComponent
 
-class Cell(object):
+class Cell(GameComponent):
 
     FLOOR = 0
     WALL = 1
+
+    updated_cells = []
 
     def __init__(self, coord, cell_type=FLOOR, health=1.0):
         self.coord = coord
         self.type = cell_type
         self.health = health
+        self.redraw()
 
     @property
     def x(self):
@@ -33,8 +38,19 @@ class Cell(object):
             self.health -= damage
             if self.health <= 0:
                 self.type = Cell.FLOOR
+            self.redraw()
 
-class Map(object):
+    def redraw(self):
+        Cell.updated_cells.append(self)
+
+    def draw(self, game, surface, milliseconds):
+        rect = pygame.rect.Rect(self.x * game.cell_size[0],
+                                self.y * game.cell_size[1],
+                                game.cell_size[0],
+                                game.cell_size[1])
+        pygame.draw.rect(surface, self.color, rect)
+
+class Map(GameComponent):
 
     def __init__(self, game, size, map_generator):
 
@@ -102,3 +118,8 @@ class Map(object):
                     adjacent_cells.append(adjacent_cell)
 
         return adjacent_cells
+
+    def draw(self, game, surface, milliseconds):
+        for cell in Cell.updated_cells:
+            cell.draw(game, surface, milliseconds)
+        Cell.updated_cells = []
