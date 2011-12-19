@@ -81,6 +81,8 @@ class Game(BaseGame):
 
     def on_init(self):
 
+        self.objects = {}
+
         self.cell_size = (10, 10)
 
         # Init map
@@ -95,14 +97,14 @@ class Game(BaseGame):
         empty_cells = list(self.map.get_cells(Cell.FLOOR))
 
         # Init coins
-        self.coins = []
+        self.objects['coins'] = []
         for _ in range(25):
             cell = random.choice(empty_cells)
             empty_cells.remove(cell)
-            self.coins.append(Coin(cell.coord))
+            self.objects['coins'].append(Coin(cell.coord))
 
         # Init bombs
-        self.bombs = []
+        self.objects['bombs'] = []
 
         # Init player
         self.player = Player.create_human_player(self, location=random.choice(empty_cells).coord)
@@ -113,7 +115,7 @@ class Game(BaseGame):
                                                   (cell.y - self.player.location[1]) ** 2))
 
         # Init monsters
-        self.monsters = []
+        self.objects['monsters'] = []
 
         harmless_monsters_count = 1
         coward_monsters_count = 1
@@ -125,7 +127,7 @@ class Game(BaseGame):
             empty_cells.remove(cell)
             monster = Player.create_harmless_monster(self, location=cell.coord)
             monster.color = (0, 128, 255)
-            self.monsters.append(monster)
+            self.objects['monsters'].append(monster)
 
         # Coward
         for _ in xrange(coward_monsters_count):
@@ -133,7 +135,7 @@ class Game(BaseGame):
             empty_cells.remove(cell)
             monster = Player.create_coward_monster(self, self.player, location=cell.coord)
             monster.color = (255, 0, 255)
-            self.monsters.append(monster)
+            self.objects['monsters'].append(monster)
 
         # Agressive
         for _ in xrange(agressive_monsters_count):
@@ -141,7 +143,7 @@ class Game(BaseGame):
             empty_cells.remove(cell)
             monster = Player.create_agressive_monster(self, self.player, location=cell.coord)
             monster.color = (255, 128, 0)
-            self.monsters.append(monster)
+            self.objects['monsters'].append(monster)
 
         # Init drawing surfaces
         self.redraw_cells = []
@@ -149,20 +151,27 @@ class Game(BaseGame):
         self.map_surface = pygame.Surface(self.map_size_in_pixels)
         self.draw_surface = pygame.Surface(self.map_size_in_pixels)
 
+    def get_objects(self, object_types):
+        if not hasattr(object_types, '__iter__'):
+            object_types = [object_types]
+        object_types = (t for t in object_types if self.objects.has_key(t))
+        return (o for t in object_types
+                  for o in self.objects[t]
+                  if not o.is_destroyed())
+
     def on_update(self, milliseconds):
 
         self.player.update(self, milliseconds)
         if self.player.location_changed:
             # Check if player collected a coin
-            for coin in self.coins:
-                if not coin.is_destroyed():
-                    if coin.location == self.player.location:
-                        coin.collect()
+            for coin in self.get_objects('coins'):
+                if coin.location == self.player.location:
+                    coin.collect()
 
-        for monster in self.monsters:
+        for monster in self.get_objects('monsters'):
             monster.update(self, milliseconds)
 
-        for bomb in self.bombs:
+        for bomb in self.get_objects('bombs'):
             bomb.update(self, milliseconds)
 
     def on_draw(self, milliseconds):
@@ -172,13 +181,11 @@ class Game(BaseGame):
         self.map.draw(self, self.map_surface, milliseconds)
         self.draw_surface.blit(self.map_surface, (0, 0))
 
-        for coin in self.coins:
-            if not coin.is_destroyed():
-                coin.draw(self, self.draw_surface, milliseconds)
+        for coin in self.get_objects('coins'):
+            coin.draw(self, self.draw_surface, milliseconds)
 
-        for bomb in self.bombs:
-            if not bomb.is_destroyed():
-                bomb.draw(self, self.draw_surface, milliseconds)
+        for bomb in self.get_objects('bombs'):
+            bomb.draw(self, self.draw_surface, milliseconds)
 
         self._draw_monsters()
         self._draw_player()
@@ -210,7 +217,7 @@ class Game(BaseGame):
         self._paint_cell(color, self.player.location, self.player.offset)
 
     def _draw_monsters(self):
-        for monster in self.monsters:
+        for monster in self.get_objects('monsters'):
             color = monster.color
             if hasattr(monster.controls, 'is_following') and monster.controls.is_following:
                 color = (255, 0, 0)

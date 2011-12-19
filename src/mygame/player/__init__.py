@@ -5,7 +5,7 @@ from mygame.player import controls
 from mygame.types import direction
 from mygame import objects
 
-class Player(object):
+class Player(objects.GameComponent):
 
     @classmethod
     def create_player(cls, controls, speed=None, location=None):
@@ -172,5 +172,5 @@ class Player(object):
             self._time_until_next_bomb = 0
             if self.controls.is_planting_bomb():
                 bomb = objects.Bomb(self.location)
-                game.bombs.append(bomb)
+                game.objects['bombs'].append(bomb)
                 self._time_until_next_bomb += self._min_time_between_bombs

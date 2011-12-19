@@ -90,22 +90,22 @@ class Bomb(GameComponent):
                 cell.hit(damage)
 
                 # Damage coins
-                for coin in game.coins:
+                for coin in game.objects['coins']:
                     if not coin.is_destroyed():
                         if coin.location == coord:
                             coin.hit(damage)
 
                 # Damage monsters
                 killed_monsters = []
-                for monster in game.monsters:
+                for monster in game.objects['monsters']:
                     if monster.location == coord:
                         monster.hit(damage)
                         if monster.is_dead():
                             killed_monsters.append(monster)
                 for monster in killed_monsters:
-                    game.monsters.remove(monster)
+                    game.objects['monsters'].remove(monster)
 
-        game.bombs.remove(self)
+        game.objects['bombs'].remove(self)
 
     def draw(self, game, surface, milliseconds):
         x = int(game.cell_size[0] * (self.location[0] + 0.5))

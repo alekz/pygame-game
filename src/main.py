@@ -1,4 +1,5 @@
+import mygame
 from mygame import Game
 
-game = Game()
-game.start()
+mygame.game = Game()
+mygame.game.start()
