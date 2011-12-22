@@ -1,17 +1,15 @@
 import random
 import math
-
 import pygame
-
-from mygame.player import Player
+from mygame import factory
 from mygame.map import generator, Map, Cell
-from mygame.objects import Coin
 
 class BaseGame(object):
 
     def __init__(self):
 
         self.is_running = False
+        self.milliseconds = 0
 
         self.fps = 60
         self.screen_size = (640, 480)
@@ -20,6 +18,10 @@ class BaseGame(object):
         self.screen = None
 
         self.on_init()
+
+    @property
+    def seconds(self):
+        return self.milliseconds / 1000.0
 
     def start(self):
 
@@ -35,7 +37,7 @@ class BaseGame(object):
     def run(self):
         self.is_running = True
         while True:
-            milliseconds = self.clock.tick(self.fps)
+            self.milliseconds = self.clock.tick(self.fps)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.stop()
@@ -46,8 +48,8 @@ class BaseGame(object):
                 elif event.type == pygame.MOUSEMOTION:
                     self.on_mouse_motion(event.pos, event.rel)
             if self.is_running:
-                self.on_update(milliseconds)
-                self.on_draw(milliseconds)
+                self.on_update()
+                self.on_draw()
                 pygame.display.update()
             else:
                 break
@@ -73,15 +75,15 @@ class BaseGame(object):
 
     def on_mouse_motion(self, pos, rel): pass
 
-    def on_update(self, milliseconds): pass
+    def on_update(self): pass
 
-    def on_draw(self, milliseconds): pass
+    def on_draw(self): pass
 
 class Game(BaseGame):
 
     def on_init(self):
 
-        self.objects = {}
+        self.entities = {}
 
         self.cell_size = (10, 10)
 
@@ -97,53 +99,54 @@ class Game(BaseGame):
         empty_cells = list(self.map.get_cells(Cell.FLOOR))
 
         # Init coins
-        self.objects['coins'] = []
+        self.entities['coins'] = []
         for _ in range(25):
             cell = random.choice(empty_cells)
             empty_cells.remove(cell)
-            self.objects['coins'].append(Coin(cell.coord))
+            coin = factory.create_coin(cell.coord)
+            self.entities['coins'].append(coin)
 
         # Init bombs
-        self.objects['bombs'] = []
+        self.entities['bombs'] = []
 
         # Init player
-        self.player = Player.create_human_player(self, location=random.choice(empty_cells).coord)
+        self.player = factory.create_player(coord=random.choice(empty_cells).coord)
 
-        # Make sure monsters are generated at some distance from the player
-        empty_cells = list(cell for cell in empty_cells
-                                if 15 < math.sqrt((cell.x - self.player.location[0]) ** 2 +
-                                                  (cell.y - self.player.location[1]) ** 2))
-
-        # Init monsters
-        self.objects['monsters'] = []
-
-        harmless_monsters_count = 1
-        coward_monsters_count = 1
-        agressive_monsters_count = 5
-
-        # Harmless
-        for _ in xrange(harmless_monsters_count):
-            cell = random.choice(empty_cells)
-            empty_cells.remove(cell)
-            monster = Player.create_harmless_monster(self, location=cell.coord)
-            monster.color = (0, 128, 255)
-            self.objects['monsters'].append(monster)
-
-        # Coward
-        for _ in xrange(coward_monsters_count):
-            cell = random.choice(empty_cells)
-            empty_cells.remove(cell)
-            monster = Player.create_coward_monster(self, self.player, location=cell.coord)
-            monster.color = (255, 0, 255)
-            self.objects['monsters'].append(monster)
-
-        # Agressive
-        for _ in xrange(agressive_monsters_count):
-            cell = random.choice(empty_cells)
-            empty_cells.remove(cell)
-            monster = Player.create_agressive_monster(self, self.player, location=cell.coord)
-            monster.color = (255, 128, 0)
-            self.objects['monsters'].append(monster)
+#        # Make sure monsters are generated at some distance from the player
+#        empty_cells = list(cell for cell in empty_cells
+#                                if 15 < math.sqrt((cell.x - self.player.location[0]) ** 2 +
+#                                                  (cell.y - self.player.location[1]) ** 2))
+#
+#        # Init monsters
+#        self.entities['monsters'] = []
+#
+#        harmless_monsters_count = 1
+#        coward_monsters_count = 1
+#        agressive_monsters_count = 5
+#
+#        # Harmless
+#        for _ in xrange(harmless_monsters_count):
+#            cell = random.choice(empty_cells)
+#            empty_cells.remove(cell)
+#            monster = Player.create_harmless_monster(self, location=cell.coord)
+#            monster.color = (0, 128, 255)
+#            self.entities['monsters'].append(monster)
+#
+#        # Coward
+#        for _ in xrange(coward_monsters_count):
+#            cell = random.choice(empty_cells)
+#            empty_cells.remove(cell)
+#            monster = Player.create_coward_monster(self, self.player, location=cell.coord)
+#            monster.color = (255, 0, 255)
+#            self.entities['monsters'].append(monster)
+#
+#        # Agressive
+#        for _ in xrange(agressive_monsters_count):
+#            cell = random.choice(empty_cells)
+#            empty_cells.remove(cell)
+#            monster = Player.create_agressive_monster(self, self.player, location=cell.coord)
+#            monster.color = (255, 128, 0)
+#            self.entities['monsters'].append(monster)
 
         # Init drawing surfaces
         self.redraw_cells = []
@@ -151,46 +154,56 @@ class Game(BaseGame):
         self.map_surface = pygame.Surface(self.map_size_in_pixels)
         self.draw_surface = pygame.Surface(self.map_size_in_pixels)
 
-    def get_objects(self, object_types):
-        if not hasattr(object_types, '__iter__'):
-            object_types = [object_types]
-        object_types = (t for t in object_types if self.objects.has_key(t))
-        return (o for t in object_types
-                  for o in self.objects[t]
-                  if not o.is_destroyed())
+    def get_entities(self, entity_types=None):
+        if entity_types is None:
+            entity_types = self.entities.keys()
+        elif not hasattr(entity_types, '__iter__'):
+            entity_types = [entity_types]
+        entity_types = (t for t in entity_types if self.entities.has_key(t))
+        return (e for t in entity_types
+                  for e in self.entities[t]
+                  if not e.destroyed)
 
-    def on_update(self, milliseconds):
+    def on_update(self):
 
-        self.player.update(self, milliseconds)
-        if self.player.location_changed:
-            # Check if player collected a coin
-            for coin in self.get_objects('coins'):
-                if coin.location == self.player.location:
-                    coin.collect()
+        for e in self.get_entities():
+            e.update(self)
 
-        for monster in self.get_objects('monsters'):
-            monster.update(self, milliseconds)
+        self.player.update(self)
 
-        for bomb in self.get_objects('bombs'):
-            bomb.update(self, milliseconds)
+        #if self.player.location_changed:
+        #    # Check if player collected a coin
+        #    for coin in self.get_entities('coins'):
+        #        if coin.location == self.player.location:
+        #            coin.collect()
 
-    def on_draw(self, milliseconds):
+        #for monster in self.get_entities('monsters'):
+        #    monster.update(self)
+
+        #for bomb in self.get_entities('bombs'):
+        #    bomb.update(self)
+
+    def on_draw(self):
 
         self._clear_screen()
 
-        self.map.draw(self, self.map_surface, milliseconds)
+        self.map.draw(self, self.map_surface)
         self.draw_surface.blit(self.map_surface, (0, 0))
 
-        for coin in self.get_objects('coins'):
-            coin.draw(self, self.draw_surface, milliseconds)
+        for e in self.get_entities():
+            e.draw(self, self.draw_surface)
 
-        for bomb in self.get_objects('bombs'):
-            bomb.draw(self, self.draw_surface, milliseconds)
+        #for coin in self.get_entities('coins'):
+        #    coin.draw(self, self.draw_surface, milliseconds)
 
-        self._draw_monsters()
-        self._draw_player()
+        #for bomb in self.get_entities('bombs'):
+        #    bomb.draw(self, self.draw_surface, milliseconds)
 
-        self._draw_fps()
+        #self._draw_monsters()
+        #self._draw_player()
+        self.player.draw(self, self.draw_surface)
+
+        #self._draw_fps()
 
         self._update_screen()
 
@@ -211,30 +224,6 @@ class Game(BaseGame):
                 elif offset[i] < self.screen_size[i] - self.map_size_in_pixels[i]:
                     offset[i] = self.screen_size[i] - self.map_size_in_pixels[i]
         self.screen.blit(self.draw_surface, offset)
-
-    def _draw_player(self):
-        color = (0, 192, 0)
-        self._paint_cell(color, self.player.location, self.player.offset)
-
-    def _draw_monsters(self):
-        for monster in self.get_objects('monsters'):
-            color = monster.color
-            if hasattr(monster.controls, 'is_following') and monster.controls.is_following:
-                color = (255, 0, 0)
-            self._paint_cell(color, monster.location, monster.offset)
-
-    def _draw_fps(self):
-        #fps = self.clock.get_fps()
-        #print fps
-        pass
-
-    def _paint_cell(self, color, coord, offset=(0.0, 0.0), surface=None):
-        surface = surface or self.draw_surface
-        rect = pygame.rect.Rect((coord[0] + offset[0]) * self.cell_size[0],
-                                (coord[1] + offset[1]) * self.cell_size[1],
-                                self.cell_size[0],
-                                self.cell_size[1])
-        pygame.draw.rect(surface, color, rect)
 
     def on_keydown(self, key):
         if key == pygame.K_ESCAPE:
