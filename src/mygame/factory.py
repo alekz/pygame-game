@@ -10,7 +10,8 @@ def create_coin(coord=None):
     return Entity(components={
         Component.LOCATION: components.location.LocationComponent(coord=coord),
         Component.DRAW: components.draw.DrawCircleComponent(size=0.4, color=(255, 255, 0)),
-        'health': components.HealthComponent(),
+        Component.HEALTH: components.HealthComponent(),
+        Component.COLLECTABLE: components.CollectableComponent(),
     })
 
 def create_bomb(coord=None):
@@ -26,4 +27,5 @@ def create_player(coord=None):
         Component.MOVEMENT: components.movement.MovementComponent(speed=10.0),
         Component.BEHAVIOR: components.behavior.HumanPlayerInputComponent(),
         Component.DRAW: components.draw.DrawRectangleComponent(size=0.8, color=(0, 255, 0)),
+        Component.COLLECTOR: components.CollectorComponent(),
     })

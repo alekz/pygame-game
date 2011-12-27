@@ -2,6 +2,7 @@ import math
 
 from mygame.types import direction
 from mygame.components import Component
+from mygame.messages import Message
 
 class MovementComponent(Component):
 
@@ -73,6 +74,7 @@ class MovementComponent(Component):
 
         # Check if new cell was reached
         changed_cell = zc_old != zc
+        old_coord = entity.location.coord
 
         # Check if we should stop here and not move anymore
         if changed_cell:
@@ -96,7 +98,12 @@ class MovementComponent(Component):
         else:
             entity.location.y = (zc, zo)
 
+        # Store new direction
         self._previous_direction = d
+
+        # Notice other components about new location
+        if changed_cell:
+            entity.send_message(game, Message.CHANGE_LOCATION, coord=entity.location.coord, old_coord=old_coord)
 
     def _round_location(self, direction_, x):
         round_functions = {

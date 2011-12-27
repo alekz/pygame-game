@@ -8,10 +8,13 @@ class Component(object):
     LOCATION = 'location'
     MOVEMENT = 'movement'
     EXPLOSION = 'explosion'
+    HEALTH = 'health'
+    COLLECTABLE = 'collectable'
+    COLLECTOR = 'collector'
 
     def update(self, game, entity): pass
 
-    def send_message(self, game, entity, message_type, *args, **kwargs): pass
+    def receive_message(self, game, entity, message_type, *args, **kwargs): pass
 
 
 class HealthComponent(Component):
@@ -28,6 +31,7 @@ class HealthComponent(Component):
 
         if self.health <= 0.0:
             entity.destroyed = True
+
 
 class ExplosionComponent(Component):
 
@@ -92,3 +96,16 @@ class ExplosionComponent(Component):
                     y = coord[1] + dy
                     damage = self.power * (1 - (d / r) ** 2)
                     yield ((x, y), damage)
+
+
+class CollectableComponent(Component):
+
+    def on_collect(self, game, entity):
+        entity.destroyed = True
+
+
+class CollectorComponent(Component):
+
+    def on_change_location(self, game, entity, coord, old_coord):
+        for e in game.get_entities(coord=coord):
+            e.send_message(game, Message.COLLECT)

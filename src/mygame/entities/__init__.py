@@ -2,9 +2,6 @@ from mygame.components import Component
 from mygame.components.draw import DrawComponent
 
 
-class NoComponentException(Exception): pass
-
-
 class Entity(object):
 
     def __init__(self, components={}, properties={}, state=None):
@@ -34,7 +31,7 @@ class Entity(object):
             if hasattr(component, method_name):
                 getattr(component, method_name)(game, self, *args, **kwargs)
             else:
-                component.send_message(game, self, message_type, *args, **kwargs)
+                component.receive_message(game, self, message_type, *args, **kwargs)
 
     @property
     def destroyed(self):
@@ -48,7 +45,7 @@ class Entity(object):
         try:
             return self.components[component]
         except KeyError:
-            raise NoComponentException
+            return None
 
     @property
     def location(self):

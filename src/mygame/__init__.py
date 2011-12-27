@@ -154,15 +154,24 @@ class Game(BaseGame):
         self.map_surface = pygame.Surface(self.map_size_in_pixels)
         self.draw_surface = pygame.Surface(self.map_size_in_pixels)
 
-    def get_entities(self, entity_types=None):
-        if entity_types is None:
-            entity_types = self.entities.keys()
-        elif not hasattr(entity_types, '__iter__'):
-            entity_types = [entity_types]
-        entity_types = (t for t in entity_types if self.entities.has_key(t))
-        return (e for t in entity_types
-                  for e in self.entities[t]
-                  if not e.destroyed)
+    def get_entities(self, types=None, coord=None):
+
+        if types is None:
+            types = self.entities.keys()
+        else:
+            if not hasattr(types, '__iter__'):
+                types = [types]
+            types = (t for t in types if self.entities.has_key(t))
+
+        entities = (e for t in types
+                      for e in self.entities[t]
+                      if not e.destroyed)
+
+        if coord is not None:
+            entities = (e for e in entities
+                          if e.location and e.location.coord == coord)
+
+        return entities
 
     def on_update(self):
 
