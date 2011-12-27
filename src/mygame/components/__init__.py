@@ -100,12 +100,12 @@ class ExplosionComponent(Component):
 
 class CollectableComponent(Component):
 
-    def on_collect(self, game, entity):
+    def on_collect(self, game, entity, collector=None):
         entity.destroyed = True
 
 
 class CollectorComponent(Component):
 
-    def on_change_location(self, game, entity, coord, old_coord):
+    def on_change_location(self, game, entity, coord=None, old_coord=None):
         for e in game.get_entities(coord=coord):
-            e.send_message(game, Message.COLLECT)
+            e.send_message(game, Message.COLLECT, collector=entity)

@@ -26,12 +26,20 @@ class Entity(object):
                 component.draw(game, surface, self)
 
     def send_message(self, game, message_type, *args, **kwargs):
-        for component in self.components.values():
+
+        results = {}
+
+        for component_name, component in self.components.items():
+
             method_name = 'on_' + message_type
+
             if hasattr(component, method_name):
-                getattr(component, method_name)(game, self, *args, **kwargs)
+                result = getattr(component, method_name)(game, self, *args, **kwargs)
             else:
-                component.receive_message(game, self, message_type, *args, **kwargs)
+                result = component.receive_message(game, self, message_type, *args, **kwargs)
+
+            if result is not None:
+                results[component_name] = result
 
     @property
     def destroyed(self):
