@@ -7,13 +7,20 @@ class BehaviorComponent(Component):
 
 class HumanPlayerInputComponent(BehaviorComponent):
 
-    def update(self, game, entity):
-        try:
-            movement = entity.components[Component.MOVEMENT]
-        except KeyError:
-            return
+    def __init__(self):
+        self._min_time_between_bombs = 1.0  # seconds
+        self._time_since_last_bomb = 0.0
 
-        movement.direction = self._get_movement_direction(movement)
+    def update(self, game, entity):
+
+        entity.movement.direction = self._get_movement_direction(entity.movement)
+
+        self._time_since_last_bomb += game.seconds
+        if self._is_planting_bomb() and self._min_time_between_bombs < self._time_since_last_bomb:
+            from mygame import factory
+            bomb = factory.create_bomb(entity.location.coord)
+            game.entities['bombs'].append(bomb)
+            self._time_since_last_bomb = 0.0
 
     def _get_movement_direction(self, movement):
 
@@ -39,5 +46,5 @@ class HumanPlayerInputComponent(BehaviorComponent):
 
         return direction.NONE
 
-    #def _is_planting_bomb(self):
-    #    return pygame.key.get_pressed()[pygame.K_SPACE]
+    def _is_planting_bomb(self):
+        return pygame.key.get_pressed()[pygame.K_SPACE]

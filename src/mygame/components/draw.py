@@ -16,13 +16,8 @@ class DrawCircleComponent(DrawComponent):
 
     def draw(self, game, surface, entity):
 
-        try:
-            location = entity.components[Component.LOCATION]
-        except KeyError:
-            return
-
-        x = int(game.cell_size[0] * (location.x + 0.5))
-        y = int(game.cell_size[1] * (location.y + 0.5))
+        x = int(game.cell_size[0] * (entity.location.x + 0.5))
+        y = int(game.cell_size[1] * (entity.location.y + 0.5))
         r = int(self.size * (game.cell_size[0] + game.cell_size[1]) / 4)
 
         pygame.draw.circle(surface, self.color, (x, y), r)
@@ -36,15 +31,10 @@ class DrawRectangleComponent(DrawComponent):
 
     def draw(self, game, surface, entity):
 
-        try:
-            location = entity.components[Component.LOCATION]
-        except KeyError:
-            return
-
         cw, ch = game.cell_size
 
-        x = int(cw * (location.x + (1 - self.size) / 2))
-        y = int(ch * (location.y + (1 - self.size) / 2))
+        x = int(cw * (entity.location.x + (1 - self.size) / 2))
+        y = int(ch * (entity.location.y + (1 - self.size) / 2))
         w = int(cw * self.size)
         h = int(ch * self.size)
 

@@ -1,6 +1,10 @@
 from mygame.components import Component
 from mygame.components.draw import DrawComponent
 
+
+class NoComponentException(Exception): pass
+
+
 class Entity(object):
 
     def __init__(self, components={}, properties={}, state=None):
@@ -31,3 +35,17 @@ class Entity(object):
     @destroyed.setter
     def destroyed(self, value):
         self._destroyed = bool(value)
+
+    def __call__(self, component):
+        try:
+            return self.components[component]
+        except KeyError:
+            raise NoComponentException
+
+    @property
+    def location(self):
+        return self(Component.LOCATION)
+
+    @property
+    def movement(self):
+        return self(Component.MOVEMENT)

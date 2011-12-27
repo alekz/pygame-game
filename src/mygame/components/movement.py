@@ -37,12 +37,6 @@ class MovementComponent(Component):
 
     def update(self, game, entity):
 
-        # Get location component; it is required in order to proceed
-        try:
-            location = entity.components[Component.LOCATION]
-        except KeyError:
-            return
-
         # Calculate the actual movement direction: it will not necessary be the
         # input direction specified by other components
         werent_moving = self._previous_direction == direction.NONE
@@ -72,8 +66,8 @@ class MovementComponent(Component):
         delta = sign * self.speed * game.seconds
 
         # Calculate new location
-        zc_old = location.coord[i]
-        z = location.location[i] + delta
+        zc_old = entity.location.coord[i]
+        z = entity.location.location[i] + delta
         zc = self._round_location(d, z)
         zo = z - zc
 
@@ -85,7 +79,7 @@ class MovementComponent(Component):
 
             # Check if further movement is possible
             if not stop_at_new_cell:
-                new_coord = list(location.coord)
+                new_coord = list(entity.location.coord)
                 new_coord[i] = zc
                 if not game.map.can_move_to(new_coord):
                     stop_at_new_cell = True
@@ -98,9 +92,9 @@ class MovementComponent(Component):
 
         # Update location
         if i == 0:
-            location.x = (zc, zo)
+            entity.location.x = (zc, zo)
         else:
-            location.y = (zc, zo)
+            entity.location.y = (zc, zo)
 
         self._previous_direction = d
 
