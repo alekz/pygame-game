@@ -1,4 +1,5 @@
 import math
+from mygame.messages import Message
 
 class Component(object):
 
@@ -10,6 +11,26 @@ class Component(object):
 
     def update(self, game, entity): pass
 
+    def send_message(self, game, entity, message_type, *args, **kwargs): pass
+
+
+class HealthComponent(Component):
+
+    def __init__(self, health=None):
+        self.health = health
+
+    def on_damage(self, game, entity, damage=0.0):
+
+        if damage <= 0.0:
+            return
+
+        if self.health is None:
+            self.health = 0.0
+        else:
+            self.health -= damage
+
+        if self.health <= 0.0:
+            entity.destroyed = True
 
 class ExplosionComponent(Component):
 
@@ -50,8 +71,8 @@ class ExplosionComponent(Component):
                     cell.hit(damage)
 
                     # Damage entities
-                    #for e in entities.get(coord, []):
-                    #    e.hit(damage)
+                    for e in entities.get(coord, []):
+                        e.send_message(game, Message.DAMAGE, damage)
 
             entity.destroyed = True
 

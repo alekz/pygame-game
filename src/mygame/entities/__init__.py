@@ -28,6 +28,14 @@ class Entity(object):
             if isinstance(component, DrawComponent):
                 component.draw(game, surface, self)
 
+    def send_message(self, game, message_type, *args, **kwargs):
+        for component in self.components.values():
+            method_name = 'on_' + message_type
+            if hasattr(component, method_name):
+                getattr(component, method_name)(game, self, *args, **kwargs)
+            else:
+                component.send_message(game, self, message_type, *args, **kwargs)
+
     @property
     def destroyed(self):
         return self._destroyed
