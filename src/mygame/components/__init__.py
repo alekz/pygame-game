@@ -21,9 +21,6 @@ class HealthComponent(Component):
 
     def on_damage(self, game, entity, damage=0.0):
 
-        if damage <= 0.0:
-            return
-
         if self.health is None:
             self.health = 0.0
         else:
@@ -45,6 +42,9 @@ class ExplosionComponent(Component):
 
     def trigger(self):
         self.time = 0
+
+    def on_damage(self, game, entity, damage=0.0):
+        self.trigger()
 
     def update(self, game, entity):
 
