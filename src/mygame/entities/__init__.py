@@ -1,3 +1,4 @@
+from mygame.messages import Message
 from mygame.components import Component
 from mygame.components.draw import DrawComponent
 
@@ -25,18 +26,22 @@ class Entity(object):
             if isinstance(component, DrawComponent):
                 component.draw(game, surface, self)
 
-    def send_message(self, game, message_type, *args, **kwargs):
+    def send_message(self, game, message, **kwargs):
+
+        if not isinstance(message, Message):
+            message = Message(str(message), **kwargs)
 
         results = {}
 
         for component_name, component in self.components.items():
 
-            method_name = 'on_' + message_type
+            method_name = 'on_' + message.type
 
             if hasattr(component, method_name):
-                result = getattr(component, method_name)(game, self, *args, **kwargs)
+                message_handler = getattr(component, method_name)
             else:
-                result = component.receive_message(game, self, message_type, *args, **kwargs)
+                message_handler = component.receive_message
+            result = message_handler(game, self, message)
 
             if result is not None:
                 results[component_name] = result

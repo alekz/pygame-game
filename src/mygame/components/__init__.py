@@ -14,7 +14,7 @@ class Component(object):
 
     def update(self, game, entity): pass
 
-    def receive_message(self, game, entity, message_type, *args, **kwargs): pass
+    def receive_message(self, game, entity, message): pass
 
 
 class HealthComponent(Component):
@@ -22,12 +22,12 @@ class HealthComponent(Component):
     def __init__(self, health=None):
         self.health = health
 
-    def on_damage(self, game, entity, damage=0.0):
+    def on_damage(self, game, entity, message):
 
         if self.health is None:
             self.health = 0.0
         else:
-            self.health -= damage
+            self.health -= message.damage
 
         if self.health <= 0.0:
             entity.destroyed = True
@@ -47,7 +47,7 @@ class ExplosionComponent(Component):
     def trigger(self):
         self.time = 0
 
-    def on_damage(self, game, entity, damage=0.0):
+    def on_damage(self, game, entity, message):
         self.trigger()
 
     def update(self, game, entity):
@@ -76,7 +76,7 @@ class ExplosionComponent(Component):
 
                     # Damage entities
                     for e in entities.get(coord, []):
-                        e.send_message(game, Message.DAMAGE, damage)
+                        e.send_message(game, Message.DAMAGE, damage=damage)
 
             entity.destroyed = True
 
@@ -100,12 +100,12 @@ class ExplosionComponent(Component):
 
 class CollectableComponent(Component):
 
-    def on_collect(self, game, entity, collector=None):
+    def on_collect(self, game, entity, message):
         entity.destroyed = True
 
 
 class CollectorComponent(Component):
 
-    def on_change_location(self, game, entity, coord=None, old_coord=None):
-        for e in game.get_entities(coord=coord):
+    def on_change_location(self, game, entity, message):
+        for e in game.get_entities(coord=message.coord):
             e.send_message(game, Message.COLLECT, collector=entity)
