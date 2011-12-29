@@ -30,3 +30,10 @@ def get_index(direction):
 
 def get_info(direction):
     return (get_index(direction), get_sign(direction))
+
+def get_adjacent_coord(coord, direction):
+    coord = [coord[0], coord[1]]
+    if direction != NONE:
+        i, sign = get_info(direction)
+        coord[i] += sign
+    return tuple(coord)

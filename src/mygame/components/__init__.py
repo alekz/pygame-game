@@ -6,7 +6,6 @@ class Component(object):
     DRAW = 'draw'
     BEHAVIOR = 'behavior'
     LOCATION = 'location'
-    MOVEMENT = 'movement'
     EXPLOSION = 'explosion'
     HEALTH = 'health'
     COLLECTABLE = 'collectable'
@@ -62,12 +61,13 @@ class ExplosionComponent(Component):
             # Prepare lists of entites for each affected cells
             entities = {}
             for e in game.get_entities():
-                if not entities.has_key(e.location.coord):
-                    entities[e.location.coord] = []
-                entities[e.location.coord].append(e)
+                coord = e.location.cr
+                if not entities.has_key(coord):
+                    entities[coord] = []
+                entities[coord].append(e)
 
             # Do some serious damage
-            for coord, damage in self._get_damaged_cells(entity.location.coord):
+            for coord, damage in self._get_damaged_cells(entity.location.c):
                 cell = game.map(coord)
                 if cell:
 

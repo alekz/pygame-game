@@ -169,7 +169,7 @@ class Game(BaseGame):
 
         if coord is not None:
             entities = (e for e in entities
-                          if e.location and e.location.coord == coord)
+                          if e.location and e.location.cr == coord)
 
         return entities
 

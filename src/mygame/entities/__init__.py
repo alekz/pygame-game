@@ -63,7 +63,3 @@ class Entity(object):
     @property
     def location(self):
         return self(Component.LOCATION)
-
-    @property
-    def movement(self):
-        return self(Component.MOVEMENT)

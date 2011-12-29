@@ -13,16 +13,16 @@ class HumanPlayerInputComponent(BehaviorComponent):
 
     def update(self, game, entity):
 
-        entity.movement.direction = self._get_movement_direction(entity.movement)
+        entity.location.direction = self._get_movement_direction(entity.location)
 
         self._time_since_last_bomb += game.seconds
         if self._is_planting_bomb() and self._min_time_between_bombs < self._time_since_last_bomb:
             from mygame import factory
-            bomb = factory.create_bomb(entity.location.coord)
+            bomb = factory.create_bomb(entity.location.cs)
             game.entities['bombs'].append(bomb)
             self._time_since_last_bomb = 0.0
 
-    def _get_movement_direction(self, movement):
+    def _get_movement_direction(self, location):
 
         # Check, which player control keys are pressed
         keys = pygame.key.get_pressed()
@@ -41,7 +41,7 @@ class HumanPlayerInputComponent(BehaviorComponent):
 
         for (key, opposite_key, current_direction, opposite_direction) in directions:
             if key and not opposite_key:
-                if movement.direction in (direction.NONE, opposite_direction):
+                if location.direction in (direction.NONE, opposite_direction):
                     return current_direction
 
         return direction.NONE
