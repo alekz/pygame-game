@@ -154,6 +154,9 @@ class Game(BaseGame):
         self.map_surface = pygame.Surface(self.map_size_in_pixels)
         self.draw_surface = pygame.Surface(self.map_size_in_pixels)
 
+        # Pause functionality
+        self._paused = False
+
     def get_entities(self, types=None, coord=None):
 
         if types is None:
@@ -174,6 +177,9 @@ class Game(BaseGame):
         return entities
 
     def on_update(self):
+
+        if self._paused:
+            return
 
         for e in self.get_entities():
             e.update(self)
@@ -237,3 +243,14 @@ class Game(BaseGame):
     def on_keydown(self, key):
         if key == pygame.K_ESCAPE:
             self.stop()
+        if key == pygame.K_PAUSE:
+            self.toggle_pause()
+
+    def pause(self):
+        self._paused = True
+
+    def unpause(self):
+        self._paused = False
+
+    def toggle_pause(self):
+        self._paused = not self._paused
