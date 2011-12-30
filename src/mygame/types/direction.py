@@ -1,8 +1,8 @@
 NONE = 0
-LEFT = 1
+UP = 1
 RIGHT = 2
-UP = 4
-DOWN = 8
+DOWN = 4
+LEFT = 8
 
 directions = (LEFT, RIGHT, UP, DOWN)
 directions_with_none = (LEFT, RIGHT, UP, DOWN, NONE)
