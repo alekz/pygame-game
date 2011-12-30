@@ -1,9 +1,12 @@
+import random
 import pygame
 from mygame.types import direction
 from mygame.components import Component
 
+
 class BehaviorComponent(Component):
     pass
+
 
 class HumanPlayerInputComponent(BehaviorComponent):
 
@@ -48,3 +51,56 @@ class HumanPlayerInputComponent(BehaviorComponent):
 
     def _is_planting_bomb(self):
         return pygame.key.get_pressed()[pygame.K_SPACE]
+
+
+class RandomMovementComponent(BehaviorComponent):
+
+    def __init__(self):
+        self._last_direction = direction.NONE
+
+    def update(self, game, entity):
+        entity.location.direction = self._get_movement_direction(game, entity)
+
+    def _get_movement_direction(self, game, entity):
+
+        # Already moving, carry on
+        if entity.location.direction != direction.NONE:
+            return direction.NONE
+
+        new_direction = direction.NONE
+
+        possible_directions = [
+            (direction.LEFT,  -1,  0),
+            (direction.RIGHT, +1,  0),
+            (direction.UP,     0, -1),
+            (direction.DOWN,   0, +1),
+        ]
+
+        allowed_directions = []
+
+        for possible_direction, dx, dy in possible_directions:
+            coord = (entity.location.xr + dx, entity.location.yr + dy)
+            if game.map.can_move_to(coord):
+                if possible_direction == self._last_direction:
+                    weight = 100
+                elif possible_direction == direction.get_opposite(self._last_direction):
+                    weight = 1
+                else:
+                    weight = 30
+                allowed_directions.append((weight, possible_direction))
+
+        if allowed_directions:
+            total_weight = sum(weight for weight, _ in allowed_directions)
+            r = random.randint(0, total_weight - 1)
+            for weight, new_direction in allowed_directions:
+                if r < weight:
+                    break
+                r -= weight
+
+        self._last_direction = new_direction
+
+        return new_direction
+
+
+class AgressiveAIComponent(BehaviorComponent):
+    pass

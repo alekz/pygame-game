@@ -112,20 +112,23 @@ class Game(BaseGame):
         # Init player
         self.player = factory.create_player(coord=random.choice(empty_cells).coord)
 
-#        # Make sure monsters are generated at some distance from the player
-#        empty_cells = list(cell for cell in empty_cells
-#                                if 15 < math.sqrt((cell.x - self.player.location[0]) ** 2 +
-#                                                  (cell.y - self.player.location[1]) ** 2))
-#
-#        # Init monsters
-#        self.entities['monsters'] = []
-#
-#        harmless_monsters_count = 1
-#        coward_monsters_count = 1
-#        agressive_monsters_count = 5
-#
+        # Make sure monsters are generated at some distance from the player
+        empty_cells = list(cell for cell in empty_cells
+                                if 15 < math.sqrt((cell.x - self.player.location.x) ** 2 +
+                                                  (cell.y - self.player.location.y) ** 2))
+
+        # Init monsters
+        self.entities['monsters'] = []
+
+        # Agressive
+        for _ in xrange(10):
+            cell = random.choice(empty_cells)
+            empty_cells.remove(cell)
+            monster = factory.create_monster(coord=cell.coord)
+            self.entities['monsters'].append(monster)
+
 #        # Harmless
-#        for _ in xrange(harmless_monsters_count):
+#        for _ in xrange(1):
 #            cell = random.choice(empty_cells)
 #            empty_cells.remove(cell)
 #            monster = Player.create_harmless_monster(self, location=cell.coord)
@@ -133,19 +136,11 @@ class Game(BaseGame):
 #            self.entities['monsters'].append(monster)
 #
 #        # Coward
-#        for _ in xrange(coward_monsters_count):
+#        for _ in xrange(1):
 #            cell = random.choice(empty_cells)
 #            empty_cells.remove(cell)
 #            monster = Player.create_coward_monster(self, self.player, location=cell.coord)
 #            monster.color = (255, 0, 255)
-#            self.entities['monsters'].append(monster)
-#
-#        # Agressive
-#        for _ in xrange(agressive_monsters_count):
-#            cell = random.choice(empty_cells)
-#            empty_cells.remove(cell)
-#            monster = Player.create_agressive_monster(self, self.player, location=cell.coord)
-#            monster.color = (255, 128, 0)
 #            self.entities['monsters'].append(monster)
 
         # Init drawing surfaces

@@ -27,3 +27,10 @@ def create_player(coord=None):
         Component.DRAW: components.draw.DrawRectangleComponent(size=0.8, color=(0, 255, 0)),
         Component.COLLECTOR: components.CollectorComponent(),
     })
+
+def create_monster(coord=None):
+    return Entity(components={
+        Component.LOCATION: components.location.MovingLocationComponent(coord=coord, speed=8.0),
+        Component.BEHAVIOR: components.behavior.RandomMovementComponent(),
+        Component.DRAW: components.draw.DrawRectangleComponent(size=0.8, color=(255, 128, 0)),
+    })
