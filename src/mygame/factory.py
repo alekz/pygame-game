@@ -30,7 +30,15 @@ def create_player(coord=None):
 
 def create_monster(coord=None):
     return Entity(components={
-        Component.LOCATION: components.location.MovingLocationComponent(coord=coord, speed=8.0),
-        Component.BEHAVIOR: components.behavior.RandomMovementComponent(),
+        Component.LOCATION: components.location.MovingLocationComponent(coord=coord, speed=3),
+        Component.BEHAVIOR: components.behavior.AgressiveAIComponent(
+            walk_speed=3,
+            attack_speed=5,
+            walk_distance=15,
+            attack_distance=10,
+            walk_color=(255, 128, 0),
+            attack_color=(255, 0, 0)
+        ),
+        Component.HEALTH: components.HealthComponent(),
         Component.DRAW: components.draw.DrawRectangleComponent(size=0.8, color=(255, 128, 0)),
     })

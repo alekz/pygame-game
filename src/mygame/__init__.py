@@ -121,7 +121,7 @@ class Game(BaseGame):
         self.entities['monsters'] = []
 
         # Agressive
-        for _ in xrange(10):
+        for _ in xrange(5):
             cell = random.choice(empty_cells)
             empty_cells.remove(cell)
             monster = factory.create_monster(coord=cell.coord)

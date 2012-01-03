@@ -63,3 +63,7 @@ class Entity(object):
     @property
     def location(self):
         return self(Component.LOCATION)
+
+    @property
+    def drawer(self):
+        return self(Component.DRAW)
