@@ -5,26 +5,73 @@ from mygame.components.draw import DrawComponent
 
 class Entity(object):
 
-    def __init__(self, components={}, properties={}, state=None):
+    def __init__(self, components={}, properties={}, states=set()):
         self.components = components
         self.properties = properties
-        self.state = state
+        self.states = states
         self.destroyed = False
 
-    def update(self, game):
-        self.update_components(game)
+    # == Properties ==
 
-    def update_components(self, game):
-        for component in self.components.values():
-            component.update(game, self)
+    def set_property(self, name, value):
+        self.properties[name] = value
 
-    def draw(self, game, surface):
-        self.draw_components(game, surface)
+    def unset_property(self, name):
+        try:
+            del self.properties[name]
+        except KeyError:
+            pass
 
-    def draw_components(self, game, surface):
-        for component in self.components.values():
-            if isinstance(component, DrawComponent):
-                component.draw(game, surface, self)
+    def get_property(self, name, default=None):
+        return self.properties.get(name, default)
+
+    def has_property(self, name):
+        return self.properties.has_key(name)
+
+    def clear_properties(self):
+        self.properties = {}
+
+    # == Special properties ==
+
+    @property
+    def destroyed(self):
+        return self._destroyed
+
+    @destroyed.setter
+    def destroyed(self, value):
+        self._destroyed = bool(value)
+
+    # == States ==
+
+    def set_state(self, *names):
+        self.states = self.states.union(names)
+
+    def unset_state(self, *names):
+        self.states = self.states.difference(names)
+
+    def has_state(self, name):
+        return name in self.states
+
+    def clear_states(self):
+        self.states = set()
+
+    # == Components ==
+
+    def __call__(self, component):
+        try:
+            return self.components[component]
+        except KeyError:
+            return None
+
+    @property
+    def location(self):
+        return self(Component.LOCATION)
+
+    #@property
+    #def drawer(self):
+    #    return self(Component.DRAW)
+
+    # == Messages ==
 
     def send_message(self, game, message, **kwargs):
 
@@ -46,24 +93,23 @@ class Entity(object):
             if result is not None:
                 results[component_name] = result
 
-    @property
-    def destroyed(self):
-        return self._destroyed
+    # == Update ==
 
-    @destroyed.setter
-    def destroyed(self, value):
-        self._destroyed = bool(value)
+    def update(self, game):
+        self.update_components(game)
 
-    def __call__(self, component):
-        try:
-            return self.components[component]
-        except KeyError:
-            return None
+    def update_components(self, game):
+        for component in self.components.values():
+            component.update(game, self)
 
-    @property
-    def location(self):
-        return self(Component.LOCATION)
+    # == Draw ==
 
-    @property
-    def drawer(self):
-        return self(Component.DRAW)
+    def draw(self, game, surface):
+        self.draw_components(game, surface)
+
+    def draw_components(self, game, surface):
+        for component in self.components.values():
+            if isinstance(component, DrawComponent):
+                component.draw(game, surface, self)
+
+    # == == ==
