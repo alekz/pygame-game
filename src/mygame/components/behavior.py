@@ -226,16 +226,13 @@ class FollowTargetAIComponent(BehaviorComponent):
 
 class AgressiveAIComponent(BehaviorComponent):
 
-    def __init__(self, walk_speed=None, attack_speed=None, walk_distance=0, attack_distance=0, walk_color=None, attack_color=None):
-
-        self.walk_speed = walk_speed
-        self.attack_speed = attack_speed
+    def __init__(self, walk_distance=0, attack_distance=0, walk_speed=None, attack_speed=None):
 
         self.walk_distance = walk_distance
         self.attack_distance = attack_distance
 
-        self.walk_color = walk_color
-        self.attack_color = attack_color
+        self.walk_speed = walk_speed
+        self.attack_speed = attack_speed
 
         self.is_following = False
 
@@ -261,8 +258,7 @@ class AgressiveAIComponent(BehaviorComponent):
             self.is_following = True
             if self.attack_speed is not None:
                 entity.location.speed = self.attack_speed
-            if self.attack_color is not None:
-                entity.drawer.color = self.attack_color
+            entity.set_state('chasing')
 
         elif self.is_following and self.walk_distance <= distance:
 
@@ -270,8 +266,7 @@ class AgressiveAIComponent(BehaviorComponent):
             self.is_following = False
             if self.walk_speed is not None:
                 entity.location.speed = self.walk_speed
-            if self.walk_color is not None:
-                entity.drawer.color = self.walk_color
+            entity.unset_state('chasing')
 
         if self.is_following:
             self._follow_target_behavior.update(game, entity)
