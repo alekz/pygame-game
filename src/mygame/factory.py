@@ -1,3 +1,4 @@
+import random
 from collections import OrderedDict
 #from mygame import components
 import components.draw
@@ -14,8 +15,12 @@ def create_coin(coord=None):
         (Component.HEALTH, components.HealthComponent()),
         (Component.COLLECTABLE, components.CollectableComponent()),
         (Component.DRAW, components.draw.DrawCircleComponent(
-            size=0.4,
-            color=(255, 255, 0)
+            size=random.choice((0.4, 0.5, 0.6)),
+            color=random.choice((
+                (255, 128, 0),    # Copper
+                (255, 255, 255),  # Silver
+                (255, 255, 0),    # Gold
+            ))
         )),
     ]))
 
@@ -68,9 +73,9 @@ def create_monster(coord=None):
         (Component.HEALTH, components.HealthComponent()),
         (Component.DRAW, components.draw.DrawRectangleComponent(
             size=0.8,
-            color=(255, 128, 0),
+            color=(0, 128, 255),
             color_by_state=OrderedDict([
-                ('chasing', (255, 0, 0)),
+                ('chasing', (255, 0, 255)),
             ])
         )),
     ]))
