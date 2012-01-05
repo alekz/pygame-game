@@ -5,7 +5,8 @@ import pygame
 class Cell(object):
 
     FLOOR = 0
-    WALL = 1
+    STONE = 1
+    WALL = 2
 
     updated_cells = []
 
@@ -28,13 +29,15 @@ class Cell(object):
         if self.type == Cell.FLOOR:
             return (16, 16, 0)
         if self.type == Cell.WALL:
+            return (192, 192, 192)
+        if self.type == Cell.STONE:
             health = max(min(self.health, 1.0), 0.0)
             color = 64 + health * (192 - 64)
-            return (color, color, color)
+            return (color, int(color * 0.9), int(color * 0.6))
         return (0, 0, 0)
 
     def hit(self, damage):
-        if self.type == Cell.WALL:
+        if self.type == Cell.STONE:
             self.health -= damage
             if self.health <= 0:
                 self.type = Cell.FLOOR
@@ -59,12 +62,6 @@ class Map(object):
 
         # Generate empty map
         self.cells = [[Cell((x, y)) for y in xrange(self.height)] for x in xrange(self.width)]
-
-        # List of colors for each cell type
-        self.colors = {
-                       Cell.FLOOR: (  0,   0,   0),
-                       Cell.WALL:  (128, 128, 128),
-                       }
 
         # Generate random map
         map_generator.generate(self)

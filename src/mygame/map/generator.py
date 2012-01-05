@@ -13,7 +13,7 @@ class RandomMapGenerator(MapGenerator):
             for y in xrange(height):
                 r = random.randint(0, 3)
                 if r == 0:
-                    cell_type = Cell.WALL
+                    cell_type = Cell.STONE
                 else:
                     cell_type = Cell.FLOOR
                 map_(x, y).type = cell_type
@@ -29,7 +29,10 @@ class MazeGenerator(MapGenerator):
         # Pre-fill map with start pattern
         for x in xrange(map_.size[0]):
             for y in xrange(map_.size[1]):
-                map_(x, y).type = Cell.WALL
+                if x in (0, map_.size[0] - 1) or y in (0, map_.size[1] - 1):
+                    map_(x, y).type = Cell.WALL
+                else:
+                    map_(x, y).type = Cell.STONE
         for x in xrange(w):
             for y in xrange(h):
                 map_(2 * x + 1, 2 * y + 1).type = Cell.FLOOR
@@ -111,7 +114,7 @@ class MazeGenerator(MapGenerator):
         for rw, rh, rx, ry in rooms:
             for x in xrange(2 * rx, 2 * (rx + rw) + 1):
                 for y in xrange(2 * ry, 2 * (ry + rh) + 1):
-                    map_(x, y).type = Cell.WALL
+                    map_(x, y).type = Cell.STONE
         # Floor
         for rw, rh, rx, ry in rooms:
             for x in xrange(2 * rx + 1, 2 * (rx + rw)):
