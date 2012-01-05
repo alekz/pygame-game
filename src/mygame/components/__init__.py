@@ -1,5 +1,6 @@
 import math
 from mygame.messages import Message
+from mygame.types import direction
 
 class Component(object):
 
@@ -96,6 +97,23 @@ class ExplosionComponent(Component):
                     y = coord[1] + dy
                     damage = self.power * (1 - (d / r) ** 2)
                     yield ((x, y), damage)
+
+
+class MiningComponent(Component):
+
+    def __init__(self, power=1):
+        self.power = power  # Damage per second
+
+    def update(self, game, entity):
+
+        if not entity.has_state('colliding'):
+            return
+
+        damage = self.power * game.seconds
+
+        coord = direction.get_adjacent_coord(entity.location.cr, entity.location.direction)
+        cell = game.map(coord)
+        cell.hit(damage)
 
 
 class CollectableComponent(Component):

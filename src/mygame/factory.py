@@ -41,6 +41,7 @@ def create_player(coord=None):
             coord=coord,
             speed=10.0
         )),
+        ('mining', components.MiningComponent()),
         (Component.COLLECTOR, components.CollectorComponent()),
         (Component.DRAW, components.draw.DrawRectangleComponent(
             size=0.8,
