@@ -29,11 +29,11 @@ class Cell(object):
         if self.type == Cell.FLOOR:
             return (16, 16, 0)
         if self.type == Cell.WALL:
-            return (192, 192, 192)
+            return (255, 255, 255)
         if self.type == Cell.STONE:
             health = max(min(self.health, 1.0), 0.0)
-            color = 64 + health * (192 - 64)
-            return (color, int(color * 0.9), int(color * 0.6))
+            color = 64 + health * (160 - 64)
+            return (color, color, color)
         return (0, 0, 0)
 
     def hit(self, damage):
@@ -90,14 +90,16 @@ class Map(object):
         else:
             return False
 
-    def get_cells(self, cell_type=None):
-        if cell_type is None:
+    def get_cells(self, cell_types=None):
+        if cell_types is None:
             cells = (self(x, y) for x in xrange(self.width)
                                 for y in xrange(self.height))
         else:
+            if not hasattr(cell_types, '__iter__'):
+                cell_types = [cell_types]
             cells = (self(x, y) for x in xrange(self.width)
                                 for y in xrange(self.height)
-                                if self(x, y).type == cell_type)
+                                if self(x, y).type in cell_types)
         return cells
 
     def get_random_cell(self, cell_type=None):
