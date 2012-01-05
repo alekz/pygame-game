@@ -37,16 +37,16 @@ class HumanPlayerInputComponent(BehaviorComponent):
 
         # Calculate the next movement direction
         directions = [
-                  (key_left,  key_right, direction.LEFT,  direction.RIGHT ),
-                  (key_right, key_left,  direction.RIGHT, direction.LEFT  ),
-                  (key_up,    key_down,  direction.UP,    direction.DOWN  ),
-                  (key_down,  key_up,    direction.DOWN,  direction.UP    ),
+                  (key_left,  key_right, direction.LEFT,  ),
+                  (key_right, key_left,  direction.RIGHT, ),
+                  (key_up,    key_down,  direction.UP,    ),
+                  (key_down,  key_up,    direction.DOWN,  ),
                   ]
 
-        for (key, opposite_key, current_direction, opposite_direction) in directions:
+        for (key, opposite_key, current_direction) in directions:
+            # If both left and right keys are pressed, we ignore them (the same for up/down)
             if key and not opposite_key:
-                if location.direction in (direction.NONE, opposite_direction):
-                    return current_direction
+                return current_direction
 
         return direction.NONE
 

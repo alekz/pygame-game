@@ -155,25 +155,16 @@ class MovingLocationComponent(LocationComponent):
         if self._direction == self._next_direction == direction.NONE:  # Don't move!
             return
 
-        # Change direction to the opposite
-        if direction.is_opposite(self._direction, self._next_direction):
+        # Start moving or change direction to the opposite
+        if self._direction == direction.NONE or direction.is_opposite(self._direction, self._next_direction):
             self._direction = self._next_direction
-
-        # Start moving, but first check for collisions
-        if self._direction == direction.NONE:
-            target_coord = direction.get_adjacent_coord(self.cs, self._next_direction)
-            if game.map.can_move_to(target_coord):
-                self._direction = self._next_direction
-            else:
-                # Collision: can't move
-                self._direction = self._next_direction = direction.NONE
-                return
 
         # i - Axis index: 0 (left/right) or 1 (up/down)
         # sign - "Negative" (left/up) or "positive" (right/down) directionS
         i, sign = direction.get_info(self._direction)
 
         # Remember previous source cell
+        ct_old = self.ct
         cs_old = self.cs
 
         # Update our location
@@ -182,20 +173,33 @@ class MovingLocationComponent(LocationComponent):
         c[i] += delta
         self.c = c
 
-        # Check if should stop
-        has_changed_cell = cs_old != self.cs
-        if has_changed_cell:
+        # Indicates whether a new direction should be read from input
+        update_direction = False
 
-            # Update current direction
-            self._direction = self._next_direction
+        # Moving to a new cell, check for collisions
+        is_colliding = False
+        if ct_old != self.ct and not game.map.can_move_to(self.ct):
+            self.c = ct_old
+            update_direction = True
+            is_colliding = True
 
-            # Check if should stop; either because no more input or collision
-            stop = (self._direction == direction.NONE) or not game.map.can_move_to(self.ct)
-            if stop:
-                self.c = self.cr  # Reset location to the nearest cell
-                self._direction = direction.NONE
-
+        # Reached new cell
+        if cs_old != self.cs:
             # Notice other components about new location
             entity.send_message(game, Message.CHANGE_LOCATION, coord=self.cs, old_coord=cs_old)
+            update_direction = True
 
-        self._next_direction = direction.NONE
+        if update_direction:
+            if self._direction != self._next_direction:
+                self.c = self.cr
+            self._direction = self._next_direction
+
+        if self._direction != direction.NONE:
+            entity.set_state('moving')
+        else:
+            entity.unset_state('moving')
+
+        if is_colliding and self._direction != direction.NONE:
+            entity.set_state('colliding')
+        else:
+            entity.unset_state('colliding')
