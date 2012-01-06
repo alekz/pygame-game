@@ -1,6 +1,6 @@
 import math
 from mygame.messages import Message
-from mygame.types import direction
+from mygame.types import direction, damage
 
 class Component(object):
 
@@ -76,16 +76,16 @@ class ExplosionComponent(Component):
                 entities[coord].append(e)
 
             # Do some serious damage
-            for coord, damage in self._get_damaged_cells(entity.location.c):
+            for coord, damage_amount in self._get_damaged_cells(entity.location.c):
                 cell = game.map(coord)
                 if cell:
 
                     # Damage map
-                    cell.hit(damage)
+                    cell.hit(damage_amount, damage.BOMB)
 
                     # Damage entities
                     for e in entities.get(coord, []):
-                        e.send_message(game, Message.DAMAGE, damage=damage)
+                        e.send_message(game, Message.DAMAGE, damage=damage_amount)
 
             entity.destroyed = True
 
@@ -103,8 +103,8 @@ class ExplosionComponent(Component):
                 if d <= r:
                     x = coord[0] + dx
                     y = coord[1] + dy
-                    damage = self.power * (1 - (d / r) ** 2)
-                    yield ((x, y), damage)
+                    damage_amount = self.power * (1 - (d / r) ** 2)
+                    yield ((x, y), damage_amount)
 
 
 class MiningComponent(Component):
@@ -117,11 +117,11 @@ class MiningComponent(Component):
         if not entity.has_state('colliding'):
             return
 
-        damage = self.power * game.seconds
+        damage_amount = self.power * game.seconds
 
         coord = direction.get_adjacent_coord(entity.location.cr, entity.location.direction)
         cell = game.map(coord)
-        cell.hit(damage)
+        cell.hit(damage_amount, damage.PICKAXE)
 
 
 class CollectableComponent(Component):

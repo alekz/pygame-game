@@ -1,6 +1,6 @@
 import random
 import pygame
-#from mygame.objects import GameComponent
+from mygame.types import damage
 
 class Cell(object):
 
@@ -15,6 +15,10 @@ class Cell(object):
         WALL: (False, None, 0),
         STONE: (False, 0, 1),
         ROCK: (False, 1, 1),
+    }
+
+    accepted_damage_types = {
+        ROCK: (damage.BOMB,),
     }
 
     updated_cells = []
@@ -80,10 +84,15 @@ class Cell(object):
 
         return (0, 0, 0)
 
-    def hit(self, damage):
+    def hit(self, damage, damage_type=damage.DEFAULT):
 
         if self.durability is None:
             return
+
+        # Check if damage type is accepted by this cell type
+        if self.accepted_damage_types.has_key(self.type):
+            if damage_type not in self.accepted_damage_types[self.type]:
+                return
 
         self.health -= damage
         if self.health < 0:

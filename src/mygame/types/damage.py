@@ -1,0 +1,3 @@
+DEFAULT = 0
+PICKAXE = 1
+BOMB = 2
