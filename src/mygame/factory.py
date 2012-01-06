@@ -17,7 +17,7 @@ def create_coin(coord=None):
         (Component.DRAW, components.draw.DrawCircleComponent(
             size=random.choice((0.4, 0.5, 0.6)),
             color=random.choice((
-                (255, 128, 0),    # Copper
+                (255, 128, 32),    # Copper
                 (255, 255, 255),  # Silver
                 (255, 255, 0),    # Gold
             ))

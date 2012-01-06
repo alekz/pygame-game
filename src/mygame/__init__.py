@@ -97,11 +97,10 @@ class Game(BaseGame):
         map_generator = generator.MazeGenerator()
         self.map = Map(self, map_size, map_generator)
         empty_cells = list(self.map.get_cells(Cell.FLOOR))
-        all_cells = list(self.map.get_cells((Cell.FLOOR, Cell.STONE)))
 
         # Init coins
         self.entities['coins'] = []
-        coin_cells = random.sample(all_cells, 25)
+        coin_cells = random.sample(list(self.map.get_cells((Cell.FLOOR, Cell.STONE))), 25)
         for cell in coin_cells:
             coin = factory.create_coin(cell.coord)
             self.entities['coins'].append(coin)
