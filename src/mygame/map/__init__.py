@@ -5,16 +5,51 @@ import pygame
 class Cell(object):
 
     FLOOR = 0
-    STONE = 1
-    WALL = 2
+    WALL = 1
+    STONE = 2
+    ROCK = 3
+
+    type_properties = {
+        # passable, durability, health
+        FLOOR: (True, None, 0),
+        WALL: (False, None, 0),
+        STONE: (False, 0, 1),
+        ROCK: (False, 1, 1),
+    }
 
     updated_cells = []
 
-    def __init__(self, coord, cell_type=FLOOR, health=1.0):
+    def __init__(self, coord, cell_type=FLOOR):
+        """
+        cell_type (int)
+            Visual representation of the cell, affects only rendering
+        passable (bool)
+            If Player or NPCs can walk through this cell
+        durability (float)
+            How hard it is to destroy the cell:
+            None - Can't destroy
+            0 - Basic durability
+            1+ - Harder to destroy, not every kind of damage can do it
+        health (float)
+            How much damage is required to destroy the cell (is not affected
+            when durability is None)
+            <0 - Destroyed
+            0 - Not destroyed, but any damage will destroy it
+            >0 - Not destroyed
+        """
         self.coord = coord
         self.type = cell_type
-        self.health = health
+        self.passable = False
+        self.durability = None
+        self.health = 0
+        self.change_to(cell_type)
         self.redraw()
+
+    def change_to(self, cell_type):
+        self.type = cell_type
+        if not self.type_properties.has_key(cell_type):
+            return
+        self.passable, self.durability, self.health = self.type_properties[cell_type]
 
     @property
     def x(self):
@@ -26,22 +61,35 @@ class Cell(object):
 
     @property
     def color(self):
+
         if self.type == Cell.FLOOR:
             return (16, 16, 0)
+
         if self.type == Cell.WALL:
             return (255, 255, 255)
+
+        if self.type == Cell.ROCK:
+            health = max(min(self.health, 1.0), 0.0)
+            color = 64 + health * (192 - 64)
+            return (color, color, color)
+
         if self.type == Cell.STONE:
             health = max(min(self.health, 1.0), 0.0)
             color = 64 + health * (160 - 64)
-            return (color, color, color)
+            return (color, int(color * 0.9), int(color * 0.7))
+
         return (0, 0, 0)
 
     def hit(self, damage):
-        if self.type == Cell.STONE:
-            self.health -= damage
-            if self.health <= 0:
-                self.type = Cell.FLOOR
-            self.redraw()
+
+        if self.durability is None:
+            return
+
+        self.health -= damage
+        if self.health < 0:
+            self.change_to(Cell.FLOOR)
+
+        self.redraw()
 
     def redraw(self):
         Cell.updated_cells.append(self)
@@ -86,7 +134,7 @@ class Map(object):
 
     def can_move_to(self, coord):
         if (0 <= coord[0] < self.width) and (0 <= coord[1] < self.height):
-            return self(coord).type == Cell.FLOOR
+            return self(coord).passable
         else:
             return False
 

@@ -16,7 +16,7 @@ class RandomMapGenerator(MapGenerator):
                     cell_type = Cell.STONE
                 else:
                     cell_type = Cell.FLOOR
-                map_(x, y).type = cell_type
+                map_(x, y).change_to(cell_type)
 
 class MazeGenerator(MapGenerator):
 
@@ -30,12 +30,12 @@ class MazeGenerator(MapGenerator):
         for x in xrange(map_.size[0]):
             for y in xrange(map_.size[1]):
                 if x in (0, map_.size[0] - 1) or y in (0, map_.size[1] - 1):
-                    map_(x, y).type = Cell.WALL
+                    map_(x, y).change_to(Cell.WALL)
                 else:
-                    map_(x, y).type = Cell.STONE
+                    map_(x, y).change_to(Cell.STONE)
         for x in xrange(w):
             for y in xrange(h):
-                map_(2 * x + 1, 2 * y + 1).type = Cell.FLOOR
+                map_(2 * x + 1, 2 * y + 1).change_to(Cell.FLOOR)
 
         # Generate list of all maze cells
         cells = {}
@@ -92,7 +92,7 @@ class MazeGenerator(MapGenerator):
                 # Connect two cells on the map
                 nx = c[0] + nc[0] + 1
                 ny = c[1] + nc[1] + 1
-                map_(nx, ny).type =  Cell.FLOOR
+                map_(nx, ny).change_to(Cell.FLOOR)
 
             # Remove cell if it does't have unvisited neighbours anymore
             if len(neighbours) <= 1:
@@ -106,7 +106,7 @@ class MazeGenerator(MapGenerator):
             else:
                 x = 2 * random.randint(1, w) - 1
                 y = 2 * random.randint(1, h - 1)
-            map_(x, y).type = Cell.FLOOR
+            map_(x, y).change_to(Cell.FLOOR)
 
         # Draw rooms
 
@@ -114,12 +114,12 @@ class MazeGenerator(MapGenerator):
         for rw, rh, rx, ry in rooms:
             for x in xrange(2 * rx, 2 * (rx + rw) + 1):
                 for y in xrange(2 * ry, 2 * (ry + rh) + 1):
-                    map_(x, y).type = Cell.STONE
+                    map_(x, y).change_to(Cell.STONE)
         # Floor
         for rw, rh, rx, ry in rooms:
             for x in xrange(2 * rx + 1, 2 * (rx + rw)):
                 for y in xrange(2 * ry + 1, 2 * (ry + rh)):
-                    map_(x, y).type = Cell.FLOOR
+                    map_(x, y).change_to(Cell.FLOOR)
         # Doors
         for rw, rh, rx, ry in rooms:
             d = 1
@@ -130,4 +130,12 @@ class MazeGenerator(MapGenerator):
                      (2 * (rx + rw), 2 * random.randint(ry + d, ry + rh - 1 - d) + 1),
                      ]
             for door_coord in doors:
-                map_(door_coord).type = Cell.FLOOR
+                map_(door_coord).change_to(Cell.FLOOR)
+
+        # Replace some stone with Rock
+        stone_cells = list(map_.get_cells(Cell.STONE))
+        rock_ratio = 0.1
+        rock_cells_count = int(rock_ratio * len(stone_cells))
+        if rock_cells_count > 0:
+            for cell in random.sample(stone_cells, rock_cells_count):
+                cell.change_to(Cell.ROCK)
