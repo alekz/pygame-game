@@ -56,6 +56,14 @@ class ExplosionComponent(Component):
         if self.time is not None:
             self.time -= game.seconds
 
+        # Update color
+        if self.time is not None:
+            fract_time = 2 * self.time - int(2 * self.time)
+            if fract_time < 0.3:
+                entity.set_state('flashing')
+            else:
+                entity.unset_state('flashing')
+
         # Check is should explode
         if self.time is not None and self.time <= 0:
 

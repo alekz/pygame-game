@@ -35,7 +35,10 @@ def create_bomb(coord=None):
         )),
         (Component.DRAW, components.draw.DrawCircleComponent(
             size=0.8,
-            color=(255, 0, 0)
+            color=(255, 0, 0),
+            color_by_state=OrderedDict([
+                ('flashing', (255, 128, 128)),
+            ])
         )),
     ]))
 
